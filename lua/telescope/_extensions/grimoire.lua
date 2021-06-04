@@ -21,6 +21,18 @@ local function logger(val)
 end
 
 local function is_ready(feature)
+  local ready = vim.call('coc#rpc#ready')
+  if ready ~= 1 then
+    return false
+  end
+
+  local ok = true
+  if feature then
+    ok = vim.call('CocHasProvider', feature)
+    if not ok then
+      print("Coc: server does not support " .. feature)
+    end
+  end
   return ok
 end
 
