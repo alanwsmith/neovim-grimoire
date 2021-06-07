@@ -1,5 +1,6 @@
 local rbuf, rwin
 local sbuf, swin
+local highlight_index = 0
 
 local function open_search_window()
     sbuf = vim.api.nvim_create_buf(false, true)
@@ -7,11 +8,7 @@ local function open_search_window()
             {style = "minimal",relative='win', row=5, col=5, width=55, height=1}
         )
     vim.api.nvim_command('au CursorMoved,CursorMovedI <buffer> lua require"grimoire".show_results()')
-    -- vim.api.nvim_buf_set_keymap(sbuf, 'i', '0', '<ESC> | :lua require"grimoire".change_selected_results() | i', {
-    -- vim.api.nvim_buf_set_keymap(sbuf, 'i', '0', '<ESC> :lua require"grimoire".change_selected_results()<cr> ', {
-    -- vim.api.nvim_buf_set_keymap(sbuf, 'i', '0', require"grimoire".change_selected_results(), {
-    -- vim.api.nvim_buf_set_keymap(sbuf, 'i', '0', '<ESC> :lua require"grimoire".change_selected_results()<cr>', {
-    vim.api.nvim_buf_set_keymap(sbuf, 'i', '0', '<ESC>:lua require"grimoire".change_selected_results()<cr>', {
+    vim.api.nvim_buf_set_keymap(sbuf, 'i', '0', '<ESC>:lua require"grimoire".change_selected_results()<CR>a', {
         nowait = true, 
         noremap = true, 
         silent = true
@@ -29,8 +26,9 @@ end
 local function show_results()
     local query = vim.api.nvim_buf_get_lines(0, 0, 1, false)
     local query_string = string.gsub(query[1], '%s*$', '')
-    local lines = vim.fn.systemlist('curl -s "http://127.0.0.1:7700/indexes/grimoire/search?q='..query_string..'" | jq -r ".hits[] | .name"')
-    vim.api.nvim_buf_set_lines(rbuf, 0, 3, false, lines)
+    local query_string2 = string.gsub(query_string, '%s', '%%20')
+    local lines = vim.fn.systemlist('curl -s "http://127.0.0.1:7700/indexes/grimoire/search?q='..query_string2..'&limit=8" | jq -r ".hits[] | .name"')
+    vim.api.nvim_buf_set_lines(rbuf, 0, 9, false, lines)
     vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', 1, 0, -1)
 end
 
