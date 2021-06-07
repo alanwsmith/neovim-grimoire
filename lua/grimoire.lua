@@ -17,8 +17,8 @@ end
 
 local function show_results()
     local query = vim.api.nvim_buf_get_lines(0, 0, 1, false)
-    print(query)
-    local lines = vim.fn.systemlist('curl -s "http://127.0.0.1:7700/indexes/grimoire/search?q='..query[1]..'" | jq -r ".hits[] | .name"')
+    local query_string = string.gsub(query[1], '%s*$', '')
+    local lines = vim.fn.systemlist('curl -s "http://127.0.0.1:7700/indexes/grimoire/search?q='..query_string..'" | jq -r ".hits[] | .name"')
     vim.api.nvim_buf_set_lines(rbuf, 0, 3, false, lines)
 end
 
