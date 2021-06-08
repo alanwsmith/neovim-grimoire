@@ -1,3 +1,7 @@
+# ignore test files
+test.txt
+asdf.txt
+
 # Compiled Lua sources
 luac.out
 
