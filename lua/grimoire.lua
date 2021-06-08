@@ -19,11 +19,18 @@ local function open_search_window()
         noremap = true, 
         silent = true
     })
+    vim.api.nvim_buf_set_keymap(sbuf, 'i', ']', '<cmd>lua require"grimoire".select_previous_index()<CR>', {
+        nowait = true, 
+        noremap = true, 
+        silent = true
+    })
 end
 
 
 local function select_previous_index()
-    vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', 4, 0, -1)
+    selected_file_index = selected_file_index - 1
+    vim.api.nvim_buf_clear_namespace(rbuf, -1, 0, -1)
+    vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
 end
 
 local function select_next_index()
@@ -72,5 +79,6 @@ return {
   close_windows = close_windows,
   show_results = show_results,
   select_next_index = select_next_index,
+  select_previous_index = select_previous_index, 
 }
 
