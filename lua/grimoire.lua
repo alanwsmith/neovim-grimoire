@@ -14,6 +14,7 @@ local function open_search_window()
             {style = "minimal",relative='win', row=5, col=5, width=55, height=1}
         )
     vim.api.nvim_command('au CursorMoved,CursorMovedI <buffer> lua require"grimoire".show_results()')
+
     vim.api.nvim_buf_set_keymap(sbuf, 'i', '[', '<cmd>lua require"grimoire".select_next_index()<CR>', {
         nowait = true, 
         noremap = true, 
@@ -24,6 +25,18 @@ local function open_search_window()
         noremap = true, 
         silent = true
     })
+
+    vim.api.nvim_buf_set_keymap(sbuf, 'n', '[', '<cmd>lua require"grimoire".select_next_index()<CR>', {
+        nowait = true, 
+        noremap = true, 
+        silent = true
+    })
+    vim.api.nvim_buf_set_keymap(sbuf, 'n', ']', '<cmd>lua require"grimoire".select_previous_index()<CR>', {
+        nowait = true, 
+        noremap = true, 
+        silent = true
+    })
+
 end
 
 
