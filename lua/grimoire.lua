@@ -4,6 +4,7 @@ local spacer_buf, spacer_win
 local selected_file_index = 0
 local highlight_namespace
 local result_list_length = 12
+local result_count = 0 
 
 local function close_windows()
     vim.api.nvim_win_close(spacer_win, true)
@@ -43,7 +44,6 @@ local function open_search_window()
     vim.cmd('startinsert')
 end
 
-
 local function select_previous_index()
     if selected_file_index > 0 then
         selected_file_index = selected_file_index - 1
@@ -53,7 +53,7 @@ local function select_previous_index()
 end
 
 local function select_next_index()
-    if selected_file_index < (result_list_length - 1) then
+    if selected_file_index < math.min((result_count - 1), (result_list_length - 1)) then
         selected_file_index = selected_file_index + 1
         vim.api.nvim_buf_clear_namespace(rbuf, -1, 0, -1)
         vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
@@ -81,14 +81,9 @@ local function show_results()
     local query_string = string.gsub(query[1], '%s*$', '')
     local query_string2 = string.gsub(query_string, '%s', '%%20')
     local lines = vim.fn.systemlist('curl -s "http://127.0.0.1:7700/indexes/grimoire/search?q='..query_string2..'&limit='..result_list_length..'" | jq -r ".hits[] | .name"')
-    vim.api.nvim_buf_set_lines(rbuf, 0, 9, false, lines)
+    vim.api.nvim_buf_set_lines(rbuf, 0, result_list_length, false, lines)
+    result_count = #lines
     highlight_namespace = vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
-end
-
-local function change_selected_results()
-    -- local new_pos = api.nvim_win_get_cursor(rwin)[1] + 1
-    -- vim.api.nvim_win_set_cursor(rwin, {4, 0})
-    vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', 4, 0, -1)
 end
 
 local function grimoire()
@@ -98,12 +93,8 @@ local function grimoire()
     vim.api.nvim_buf_set_keymap(sbuf, 'n', 'q', ':lua require("grimoire").close_windows()<CR>', {})
 end
 
-local function make_mappings()
-end
-
 return {
   grimoire = grimoire,
-  change_selected_results = change_selected_results,
   close_windows = close_windows,
   show_results = show_results,
   select_next_index = select_next_index,
