@@ -29,18 +29,26 @@ local function open_search_window()
         noremap = true, 
         silent = true
     })
-
+    vim.api.nvim_buf_set_keymap(sbuf, 'i', ']', '<cmd>lua require"grimoire".open_file()<CR>', {
+        nowait = true, 
+        noremap = true, 
+        silent = true
+    })
     vim.api.nvim_buf_set_keymap(sbuf, 'n', '[', '<cmd>lua require"grimoire".select_next_index()<CR>', {
         nowait = true, 
         noremap = true, 
         silent = true
     })
-    vim.api.nvim_buf_set_keymap(sbuf, 'n', ']', '<cmd>lua require"grimoire".select_previous_index()<CR>', {
+    vim.api.nvim_buf_set_keymap(sbuf, 'n', '=', '<cmd>lua require"grimoire".select_previous_index()<CR>', {
         nowait = true, 
         noremap = true, 
         silent = true
     })
-
+    vim.api.nvim_buf_set_keymap(sbuf, 'n', ']', '<cmd>lua require"grimoire".open_file()<CR>', {
+        nowait = true, 
+        noremap = true, 
+        silent = true
+    })
     vim.cmd('startinsert')
 end
 
@@ -58,6 +66,11 @@ local function select_next_index()
         vim.api.nvim_buf_clear_namespace(rbuf, -1, 0, -1)
         vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
     end
+end
+
+local function open_file() 
+    local file_name = vim.api.nvim_buf_get_lines(rbuf, selected_file_index, (selected_file_index + 1), true) 
+    vim.api.nvim_buf_set_lines(rbuf, 9, 9, false, file_name)
 end
 
 local function open_results_window()
@@ -94,10 +107,11 @@ local function grimoire()
 end
 
 return {
-  grimoire = grimoire,
-  close_windows = close_windows,
-  show_results = show_results,
-  select_next_index = select_next_index,
-  select_previous_index = select_previous_index, 
+    grimoire = grimoire,
+    close_windows = close_windows,
+    open_file = open_file, 
+    show_results = show_results,
+    select_next_index = select_next_index,
+    select_previous_index = select_previous_index, 
 }
 
