@@ -6,6 +6,11 @@ local highlight_namespace
 local result_list_length = 12
 local result_count = 0 
 
+local storage_dir = "/Users/alans/grimoire/mdx_files"
+
+-- TODO: Setup so that if you add spaces at the end of a string it does
+-- not send a new search query 
+
 local function close_windows()
     vim.api.nvim_win_close(spacer_win, true)
     vim.api.nvim_win_close(rwin, true)
@@ -70,7 +75,13 @@ end
 
 local function open_file() 
     local file_name = vim.api.nvim_buf_get_lines(rbuf, selected_file_index, (selected_file_index + 1), true) 
-    vim.api.nvim_buf_set_lines(rbuf, 9, 9, false, file_name)
+    local file_path = storage_dir..'/'..file_name[1]
+    document_buffer = vim.api.nvim_create_buf(false, true)
+    document_window = vim.api.nvim_open_win(document_buffer, true ,
+            {style = "minimal",relative='win', row=4, col=60, width=40, height=62}
+        )
+    -- vim.api.nvim_buf_set_lines(document_buffer, 9, 9, false, {file_path})
+    vim.api.nvim_command('edit ' .. file_path) 
 end
 
 local function open_results_window()
@@ -103,7 +114,8 @@ local function grimoire()
     open_results_window()
     open_search_window()
     open_spacer_window()
-    vim.api.nvim_buf_set_keymap(sbuf, 'n', 'q', ':lua require("grimoire").close_windows()<CR>', {})
+    vim.api.nvim_buf_set_keymap(sbuf, 'i', '<F7>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
+    vim.api.nvim_buf_set_keymap(sbuf, 'n', '<F7>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
 end
 
 return {
