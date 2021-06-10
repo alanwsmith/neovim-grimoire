@@ -3,7 +3,7 @@ local sbuf, swin
 local spacer_buf, spacer_win
 local selected_file_index = 0
 local highlight_namespace
-local result_list_length = 12
+local result_list_length = 7  
 local result_count = 0 
 
 local storage_dir = "/Users/alans/grimoire/mdx_files"
@@ -20,7 +20,7 @@ end
 local function open_search_window()
     sbuf = vim.api.nvim_create_buf(false, true)
     swin = vim.api.nvim_open_win(sbuf, true ,
-            {style = "minimal",relative='win', row=5, col=4, width=55, height=1}
+            {style = "minimal",relative='win', row=0, col=0, width=80, height=1}
         )
     vim.api.nvim_command('au CursorMoved,CursorMovedI <buffer> lua require"grimoire".show_results()')
 
@@ -78,7 +78,7 @@ local function open_file()
     local file_path = storage_dir..'/'..file_name[1]
     document_buffer = vim.api.nvim_create_buf(false, true)
     document_window = vim.api.nvim_open_win(document_buffer, true ,
-            {style = "minimal",relative='win', row=4, col=60, width=40, height=62}
+            {style = "minimal",relative='win', row=13, col=0, width=80, height=19}
         )
     -- vim.api.nvim_buf_set_lines(document_buffer, 9, 9, false, {file_path})
     vim.api.nvim_command('edit ' .. file_path) 
@@ -87,14 +87,14 @@ end
 local function open_results_window()
   rbuf = vim.api.nvim_create_buf(false, true)
   rwin = vim.api.nvim_open_win(rbuf, false,
-        {style = "minimal",relative='win', row=7, col=4, width=55, height=result_list_length}
+        {style = "minimal",relative='win', row=2, col=0, width=80, height=result_list_length}
     )
 end
 
 local function open_spacer_window()
     spacer_buf = vim.api.nvim_create_buf(false, true)
     spacer_win = vim.api.nvim_open_win(spacer_buf, false,
-        {style = "minimal",relative='win', row=6, col=4, width=55, height=1}
+        {style = "minimal",relative='win', row=1, col=0, width=80, height=1}
     )
     vim.api.nvim_buf_set_lines(spacer_buf, 0, 0, false, {'======================================================'})
 end
