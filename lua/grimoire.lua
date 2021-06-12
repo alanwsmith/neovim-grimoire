@@ -15,7 +15,7 @@ local result_list_length = base_height - 5
 ------------------------------------------------
 -- [x] Search and show results 
 -- [x] Provide nav to move and up and down search results 
--- [ ] Show selected result in document window 
+-- [x] Show selected result in document window 
 -- [ ] Be able to edit document in document window 
 -- [ ] Save the file 
 
@@ -92,14 +92,11 @@ local function show_file()
     local file_name = vim.api.nvim_buf_get_lines(rbuf, selected_file_index, (selected_file_index + 1), true)
     local file_path = storage_dir..'/'..file_name[1]
     local file = io.open(file_path, "r")
-    local lines = {}
-    table.insert(lines, file:read("l"))
-    table.insert(lines, file:read("l"))
-    table.insert(lines, file:read("l"))
-    table.insert(lines, file:read("l"))
-    table.insert(lines, file:read("l"))
-    table.insert(lines, file:read("l"))
-    vim.api.nvim_buf_set_lines(document_buffer, 0, 6, false, lines)
+    local lines_table = {}
+    for line in file:lines() do
+        table.insert(lines_table, line)
+    end
+    vim.api.nvim_buf_set_lines(document_buffer, 0, 6, false, lines_table)
     -- log(file_path)
 end
 
@@ -226,6 +223,8 @@ local function grimoire()
     -- })
 
     vim.api.nvim_command('au CursorMoved,CursorMovedI <buffer> lua require"grimoire".show_results()')
+    io.output('log.log')
+    io.write("is this thing on")
 end
 
 return {
