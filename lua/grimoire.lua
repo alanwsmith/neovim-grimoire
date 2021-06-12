@@ -10,7 +10,23 @@ local base_width = vim.api.nvim_win_get_width(0)
 local base_height = vim.api.nvim_win_get_height(0)
 local result_list_length = base_height - 5 
 
-------------
+------------------------------------------------
+-- VERSION 1 Requirements 
+------------------------------------------------
+-- [x] Search and show results 
+-- [x] Provide nav to move and up and down search results 
+-- [ ] Show selected result in document window 
+-- [ ] Be able to edit document in document window 
+-- [ ] Save the file 
+
+------------------------------------------------
+-- VERSION 2 Requirements 
+------------------------------------------------
+-- [ ] Make new files 
+-- [ ] Delete files
+-- [ ] Rename files 
+------------------------------------------------
+
 -- TODO: Setup config file
 -- TODO: Only turn on hot keys when you're in the app 
 -- TODO: Save the last search and return to it when you reopen
