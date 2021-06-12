@@ -1,7 +1,9 @@
 local rbuf, rwin
 local sbuf, swin
-local spacer_buf, spacer_win
-local document_buffer, document_window 
+local spacer_buf
+local spacer_win
+local document_buffer
+local document_window 
 local selected_file_index = 0
 local highlight_namespace
 local result_list_length = 7  
@@ -14,7 +16,7 @@ local storage_dir = "/Users/alans/grimoire/mdx_files"
 local function open_terminal_window()
     console_buffer = vim.api.nvim_create_buf(false, true)
     console_window = vim.api.nvim_open_win(console_buffer, true,
-        {style = "minimal",relative='editor', row=0, col=84, width=20, height=22}
+        {style = "minimal",relative='editor', row=18, col=0, width=80, height=10}
     )
     console_terminal = vim.api.nvim_open_term(console_buffer, {})
 end
@@ -22,6 +24,7 @@ end
 
 local function log(message)
     vim.api.nvim_chan_send(console_terminal, message)
+    vim.api.nvim_chan_send(console_terminal, " ~ ")
 end
 
 -- TODO: Setup so that if you add spaces at the end of a string it does
@@ -47,17 +50,17 @@ end
 local function show_file()
     local file_name = vim.api.nvim_buf_get_lines(rbuf, selected_file_index, (selected_file_index + 1), true) 
     local file_path = storage_dir..'/'..file_name[1]
+    log(file_path)
     vim.api.nvim_set_current_win(document_window)
-    vim.api.nvim_command('edit ' .. file_path) 
-    vim.api.nvim_set_current_win(swin)
-    log("hello, log") 
+    -- vim.api.nvim_command('edit ' .. file_path) 
+    -- vim.api.nvim_set_current_win(swin)
 end
 
 local function select_next_index()
     if selected_file_index < math.min((result_count - 1), (result_list_length - 1)) then
-        -- selected_file_index = selected_file_index + 1
-        -- vim.api.nvim_buf_clear_namespace(rbuf, -1, 0, -1)
-        -- vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
+        selected_file_index = selected_file_index + 1
+        vim.api.nvim_buf_clear_namespace(rbuf, -1, 0, -1)
+        vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
         show_file()
     end
 end
@@ -67,7 +70,7 @@ local function select_previous_index()
         selected_file_index = selected_file_index - 1
         vim.api.nvim_buf_clear_namespace(rbuf, -1, 0, -1)
         vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
-        show_file()
+        -- show_file()
     end
 end
 
@@ -75,7 +78,7 @@ end
 local function open_document_window()
     document_buffer = vim.api.nvim_create_buf(false, true)
     document_window = vim.api.nvim_open_win(document_buffer, true ,
-        { style = "minimal",relative='editor', row=14, col=0, width=80, height=10 }
+        { style = "minimal",relative='editor', row=10, col=0, width=80, height=6 }
     )
     -- vim.api.nvim_put(vim.fn.readfile("/Users/alans/grimoire/mdx_files/99p_kowal.txt"), vim.fn.getregtype(), true, false)
 end
