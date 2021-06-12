@@ -3,12 +3,12 @@ local sbuf, swin
 local document_buffer, document_window 
 local selected_file_index = 0
 local highlight_namespace
-local result_list_length = 7  
 local result_count = 0 
 local console_buffer, console_window, console_terminal
 
 local base_width = vim.api.nvim_win_get_width(0)
 local base_height = vim.api.nvim_win_get_height(0)
+local result_list_length = base_height - 5 
 
 ------------
 -- TODO: Setup config file
@@ -17,6 +17,7 @@ local base_height = vim.api.nvim_win_get_height(0)
 -- TODO: Show list of recent files (and their searches) with hotkeys to get back to
 -- TODO: Setup filter lists for modes where things get excluded from search (e.g. streamer mode)
 -- TODO: Deal with windows that get resized
+-- TODO: Prevent closing one window without closing all
 ------------
 
 
@@ -47,10 +48,6 @@ end
 -- not send a new search query 
 
 local function close_windows()
-    -- TODO: Make sure you can close windows if one is already 
-    -- closed. 
-    vim.api.nvim_win_close(spacer_win, true)
-    vim.api.nvim_win_close(spacer_win_2, true)
     vim.api.nvim_win_close(rwin, true)
     vim.api.nvim_win_close(swin, true)
     vim.api.nvim_win_close(document_window, true)
@@ -112,14 +109,30 @@ end
 local function open_document_window()
     document_buffer = vim.api.nvim_create_buf(false, true)
     document_window = vim.api.nvim_open_win(document_buffer, true ,
-        { style = "minimal",relative='editor', row=10, col=0, width=80, height=30 }
+        { 
+            style="minimal",
+            relative='editor', 
+            row=3, 
+            col=math.floor(base_width / 4) + 2, 
+            width=math.floor(base_width / 4 * 3) - 3,
+            height=base_height - 5,
+            border='single'
+        }
     )
 end
 
 local function open_results_window()
   rbuf = vim.api.nvim_create_buf(false, true)
   rwin = vim.api.nvim_open_win(rbuf, false,
-        {style = "minimal",relative='editor', row=2, col=0, width=80, height=result_list_length}
+        {
+            style="minimal",
+            relative='editor', 
+            row=3, 
+            col=0, 
+            width=math.floor(base_width / 4), 
+            height=base_height - 5,
+            border='single'
+        }
     )
 end
 
@@ -138,8 +151,8 @@ end
 local function grimoire()
     -- open_terminal_window()
     -- log(tostring(vim.api.nvim_win_get_width(0)))
-    -- open_document_window()
-    -- open_results_window()
+    open_document_window()
+    open_results_window()
     open_search_window()
     vim.api.nvim_buf_set_keymap(sbuf, 'i', '<F7>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
     vim.api.nvim_buf_set_keymap(sbuf, 'n', '<F7>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
