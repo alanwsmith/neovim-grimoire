@@ -1,4 +1,3 @@
-local rbuf, rwin
 local sbuf, swin
 local document_buffer, document_window 
 local selected_file_index = 0
@@ -9,6 +8,9 @@ local console_buffer, console_window, console_terminal
 local base_width = vim.api.nvim_win_get_width(0)
 local base_height = vim.api.nvim_win_get_height(0)
 local result_list_length = base_height - 5 
+
+local current_file_name
+local current_file_path
 
 ------------------------------------------------
 -- VERSION 1 Requirements 
@@ -27,6 +29,7 @@ local result_list_length = base_height - 5
 -- [ ] Rename files 
 ------------------------------------------------
 
+-- [ ] Look at `nofile` for search and resutls windows
 -- TODO: Setup config file
 -- TODO: Only turn on hot keys when you're in the app 
 -- TODO: Save the last search and return to it when you reopen
@@ -38,6 +41,17 @@ local result_list_length = base_height - 5
 
 
 local storage_dir = "/Users/alans/grimoire/mdx_files"
+
+local function edit_document() 
+    vim.api.nvim_set_current_win(document_window)
+    vim.api.nvim_command('set buftype=""')
+    vim.api.nvim_command('file '..current_file_path)
+end
+
+local function jump_to_search() 
+    vim.api.nvim_command('write!')
+    vim.api.nvim_set_current_win(swin)
+end
 
 local function open_terminal_window()
     console_buffer = vim.api.nvim_create_buf(false, true)
@@ -65,8 +79,11 @@ end
 
 local function close_windows()
     vim.api.nvim_win_close(rwin, true)
+    vim.api.nvim_buf_delete(rbuf, { 'force', true })
     vim.api.nvim_win_close(swin, true)
+    vim.api.nvim_buf_delete(sbuf, { 'force', true })
     vim.api.nvim_win_close(document_window, true)
+    vim.api.nvim_buf_delete(document_buffer, { 'force', true })
     -- vim.api.nvim_win_close(console_window, true)
 end
 
@@ -87,17 +104,15 @@ local function open_search_window()
 end
 
 local function show_file()
-    -- TODO: Get full files
     -- TODO: Deal with no matches / no file
-    local file_name = vim.api.nvim_buf_get_lines(rbuf, selected_file_index, (selected_file_index + 1), true)
-    local file_path = storage_dir..'/'..file_name[1]
-    local file = io.open(file_path, "r")
+    current_file_name = vim.api.nvim_buf_get_lines(rbuf, selected_file_index, (selected_file_index + 1), true)
+    current_file_path = storage_dir..'/'..current_file_name[1]
+    local file = io.open(current_file_path, "r")
     local lines_table = {}
     for line in file:lines() do
         table.insert(lines_table, line)
     end
-    vim.api.nvim_buf_set_lines(document_buffer, 0, 6, false, lines_table)
-    -- log(file_path)
+    vim.api.nvim_buf_set_lines(document_buffer, 0, -1, false, lines_table)
 end
 
 local function select_next_index()
@@ -169,12 +184,9 @@ local function grimoire()
     open_search_window()
     vim.api.nvim_buf_set_keymap(sbuf, 'i', '<F7>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
     vim.api.nvim_buf_set_keymap(sbuf, 'n', '<F7>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
-    vim.api.nvim_buf_set_keymap(document_buffer, 'i', '[', '<cmd>lua require"grimoire".select_next_index()<CR>', {
-        nowait = true, 
-        noremap = true, 
-        silent = true
-    })
-    vim.api.nvim_buf_set_keymap(document_buffer, 'i', '=', '<cmd>lua require"grimoire".select_previous_index()<CR>', {
+
+
+    vim.api.nvim_buf_set_keymap(document_buffer, 'n', '5', '<cmd>lua require"grimoire".jump_to_search()<CR>', {
         nowait = true, 
         noremap = true, 
         silent = true
@@ -195,17 +207,11 @@ local function grimoire()
     --     silent = true
     -- })
     
-    vim.api.nvim_buf_set_keymap(document_buffer, 'n', '[', '<cmd>lua require"grimoire".select_next_index()<CR>', {
+    vim.api.nvim_buf_set_keymap(sbuf, 'i', ']', '<cmd>lua require"grimoire".edit_document()<CR>', {
         nowait = true, 
         noremap = true, 
         silent = true
     })
-    vim.api.nvim_buf_set_keymap(document_buffer, 'n', '=', '<cmd>lua require"grimoire".select_previous_index()<CR>', {
-        nowait = true, 
-        noremap = true, 
-        silent = true
-    })
-
     vim.api.nvim_buf_set_keymap(sbuf, 'n', '[', '<cmd>lua require"grimoire".select_next_index()<CR>', {
         nowait = true, 
         noremap = true, 
@@ -228,7 +234,9 @@ local function grimoire()
 end
 
 return {
+    edit_document = edit_document, 
     grimoire = grimoire,
+    jump_to_search = jump_to_search, 
     close_windows = close_windows,
     open_file = open_file, 
     show_results = show_results,
