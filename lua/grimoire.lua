@@ -37,6 +37,7 @@ local function close_windows()
     vim.api.nvim_win_close(rwin, true)
     vim.api.nvim_win_close(swin, true)
     vim.api.nvim_win_close(document_window, true)
+    vim.api.nvim_win_close(console_window, true)
 end
 
 local function open_search_window()
@@ -50,10 +51,17 @@ end
 local function show_file()
     local file_name = vim.api.nvim_buf_get_lines(rbuf, selected_file_index, (selected_file_index + 1), true) 
     local file_path = storage_dir..'/'..file_name[1]
+    local file = io.open(file_path, "r")
+    local lines = {}
+    table.insert(lines, file:read("l"))
+    table.insert(lines, file:read("l"))
+    table.insert(lines, file:read("l"))
+    table.insert(lines, file:read("l"))
+    table.insert(lines, file:read("l"))
+    table.insert(lines, file:read("l"))
+    vim.api.nvim_buf_set_lines(document_buffer, 0, 6, false, lines)
+
     log(file_path)
-    vim.api.nvim_set_current_win(document_window)
-    -- vim.api.nvim_command('edit ' .. file_path) 
-    -- vim.api.nvim_set_current_win(swin)
 end
 
 local function select_next_index()
@@ -70,7 +78,7 @@ local function select_previous_index()
         selected_file_index = selected_file_index - 1
         vim.api.nvim_buf_clear_namespace(rbuf, -1, 0, -1)
         vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
-        -- show_file()
+        show_file()
     end
 end
 
@@ -80,7 +88,6 @@ local function open_document_window()
     document_window = vim.api.nvim_open_win(document_buffer, true ,
         { style = "minimal",relative='editor', row=10, col=0, width=80, height=6 }
     )
-    -- vim.api.nvim_put(vim.fn.readfile("/Users/alans/grimoire/mdx_files/99p_kowal.txt"), vim.fn.getregtype(), true, false)
 end
 
 local function open_results_window()
@@ -108,7 +115,6 @@ local function show_results()
     vim.api.nvim_buf_set_lines(rbuf, 0, result_list_length, false, lines)
     result_count = #lines
     highlight_namespace = vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
-    -- open_file()
     show_file()
 end
 
@@ -120,6 +126,16 @@ local function grimoire()
     open_search_window()
     vim.api.nvim_buf_set_keymap(sbuf, 'i', '<F7>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
     vim.api.nvim_buf_set_keymap(sbuf, 'n', '<F7>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
+    vim.api.nvim_buf_set_keymap(document_buffer, 'i', '[', '<cmd>lua require"grimoire".select_next_index()<CR>', {
+        nowait = true, 
+        noremap = true, 
+        silent = true
+    })
+    vim.api.nvim_buf_set_keymap(document_buffer, 'i', '=', '<cmd>lua require"grimoire".select_previous_index()<CR>', {
+        nowait = true, 
+        noremap = true, 
+        silent = true
+    })
     vim.api.nvim_buf_set_keymap(sbuf, 'i', '[', '<cmd>lua require"grimoire".select_next_index()<CR>', {
         nowait = true, 
         noremap = true, 
@@ -130,12 +146,22 @@ local function grimoire()
         noremap = true, 
         silent = true
     })
-    vim.api.nvim_buf_set_keymap(sbuf, 'i', ']', '<cmd>lua require"grimoire".open_file()<CR>', {
+    -- vim.api.nvim_buf_set_keymap(sbuf, 'i', ']', '<cmd>lua require"grimoire".open_file()<CR>', {
+    --     nowait = true, 
+    --     noremap = true, 
+    --     silent = true
+    -- })
+    
+    vim.api.nvim_buf_set_keymap(document_buffer, 'n', '[', '<cmd>lua require"grimoire".select_next_index()<CR>', {
         nowait = true, 
         noremap = true, 
         silent = true
     })
-    vim.api.nvim_command('au CursorMoved,CursorMovedI <buffer> lua require"grimoire".show_results()')
+    vim.api.nvim_buf_set_keymap(document_buffer, 'n', '=', '<cmd>lua require"grimoire".select_previous_index()<CR>', {
+        nowait = true, 
+        noremap = true, 
+        silent = true
+    })
 
     vim.api.nvim_buf_set_keymap(sbuf, 'n', '[', '<cmd>lua require"grimoire".select_next_index()<CR>', {
         nowait = true, 
@@ -147,11 +173,13 @@ local function grimoire()
         noremap = true, 
         silent = true
     })
-    vim.api.nvim_buf_set_keymap(sbuf, 'n', ']', '<cmd>lua require"grimoire".open_file()<CR>', {
-        nowait = true, 
-        noremap = true, 
-        silent = true
-    })
+    -- vim.api.nvim_buf_set_keymap(sbuf, 'n', ']', '<cmd>lua require"grimoire".open_file()<CR>', {
+    --     nowait = true, 
+    --     noremap = true, 
+    --     silent = true
+    -- })
+
+    vim.api.nvim_command('au CursorMoved,CursorMovedI <buffer> lua require"grimoire".show_results()')
 end
 
 return {
