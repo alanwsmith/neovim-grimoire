@@ -60,37 +60,11 @@ local function open_search_window()
 end
 
 local function show_file()
---     -- TODO: Figure out if you need to clear these each time 
---     -- before recreating them.
---     vim.api.nvim_win_close(document_window, true)
---     vim.api.nvim_buf_delete(document_buffer, {})
---     document_buffer = vim.api.nvim_create_buf(false, true)
---     document_window = vim.api.nvim_open_win(document_buffer, false,
---         { style = "minimal",relative='editor', row=15, col=0, width=80, height=19 }
---     )
--- 
---     -- TODO: Deal with no empty results set. 
---     local file_name = vim.api.nvim_buf_get_lines(rbuf, selected_file_index, (selected_file_index + 1), true) 
---     local file_path = storage_dir..'/'..file_name[1]
---     vim.api.nvim_set_current_buf(document_buffer)
---     vim.api.nvim_set_current_win(document_window)
---     vim.api.nvim_command('edit ' .. file_path) 
---     vim.api.nvim_set_current_buf(sbuf)
---     vim.api.nvim_set_current_win(swin)
-end
-
--- TODO: Remove this when show_file() is done
-local function open_file() 
     local file_name = vim.api.nvim_buf_get_lines(rbuf, selected_file_index, (selected_file_index + 1), true) 
     local file_path = storage_dir..'/'..file_name[1]
-    -- vim.api.nvim_buf_set_lines(document_buffer, 9, 9, false, {file_path})
-    -- vim.api.nvim_command('edit ' .. file_path) 
-    vim.api.nvim_set_current_buf(document_buffer)
-    -- TODO: figoure out if you should used something other than `getregtype` here
-    vim.api.nvim_buf_set_lines(document_buffer, 0, -2, true, {''})
-    vim.api.nvim_buf_set_lines(document_buffer, 4, 4, false, {file_path})
-    -- vim.api.nvim_put(vim.fn.readfile(file_path), vim.fn.getregtype(), true, false)
-    vim.api.nvim_set_current_buf(sbuf)
+    vim.api.nvim_set_current_win(document_window)
+    vim.api.nvim_command('edit ' .. file_path) 
+    vim.api.nvim_set_current_win(swin)
 end
 
 local function select_next_index()
@@ -98,7 +72,7 @@ local function select_next_index()
         selected_file_index = selected_file_index + 1
         vim.api.nvim_buf_clear_namespace(rbuf, -1, 0, -1)
         vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
-        -- show_file()
+        show_file()
     end
 end
 
@@ -107,7 +81,7 @@ local function select_previous_index()
         selected_file_index = selected_file_index - 1
         vim.api.nvim_buf_clear_namespace(rbuf, -1, 0, -1)
         vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
-        --- show_file()
+        show_file()
     end
 end
 
