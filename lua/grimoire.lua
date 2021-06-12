@@ -1,14 +1,18 @@
 local rbuf, rwin
 local sbuf, swin
-local spacer_buf
-local spacer_win
-local document_buffer
-local document_window 
+local spacer_buf, spacer_win, spacer_win_2
+local document_buffer, document_window 
 local selected_file_index = 0
 local highlight_namespace
 local result_list_length = 7  
 local result_count = 0 
 local console_buffer, console_window, console_terminal
+
+-- TODO: Setup config file
+-- TODO: Only turn on hot keys when you're in the app 
+-- TODO: Save the last search and return to it when you reopen
+-- TODO: Show list of recent files (and their searches) with hotkeys to get back to
+-- TODO: Setup filter lists for modes where things get excluded from search (e.g. streamer mode)
 
 
 local storage_dir = "/Users/alans/grimoire/mdx_files"
@@ -34,22 +38,25 @@ local function close_windows()
     -- TODO: Make sure you can close windows if one is already 
     -- closed. 
     vim.api.nvim_win_close(spacer_win, true)
+    vim.api.nvim_win_close(spacer_win_2, true)
     vim.api.nvim_win_close(rwin, true)
     vim.api.nvim_win_close(swin, true)
     vim.api.nvim_win_close(document_window, true)
-    vim.api.nvim_win_close(console_window, true)
+    -- vim.api.nvim_win_close(console_window, true)
 end
 
 local function open_search_window()
     sbuf = vim.api.nvim_create_buf(false, true)
     swin = vim.api.nvim_open_win(sbuf, true ,
-            {style = "minimal",relative='editor', row=0, col=0, width=80, height=1}
+            {style = "minimal",relative='editor', row=0, col=0, width=80, height=1 }
         )
     vim.cmd('startinsert')
 end
 
 local function show_file()
-    local file_name = vim.api.nvim_buf_get_lines(rbuf, selected_file_index, (selected_file_index + 1), true) 
+    -- TODO: Get full files
+    -- TODO: Deal with no matches / no file
+    local file_name = vim.api.nvim_buf_get_lines(rbuf, selected_file_index, (selected_file_index + 1), true)
     local file_path = storage_dir..'/'..file_name[1]
     local file = io.open(file_path, "r")
     local lines = {}
@@ -60,8 +67,7 @@ local function show_file()
     table.insert(lines, file:read("l"))
     table.insert(lines, file:read("l"))
     vim.api.nvim_buf_set_lines(document_buffer, 0, 6, false, lines)
-
-    log(file_path)
+    -- log(file_path)
 end
 
 local function select_next_index()
@@ -86,7 +92,7 @@ end
 local function open_document_window()
     document_buffer = vim.api.nvim_create_buf(false, true)
     document_window = vim.api.nvim_open_win(document_buffer, true ,
-        { style = "minimal",relative='editor', row=10, col=0, width=80, height=6 }
+        { style = "minimal",relative='editor', row=10, col=0, width=80, height=30 }
     )
 end
 
@@ -99,10 +105,19 @@ end
 
 local function open_spacer_window()
     spacer_buf = vim.api.nvim_create_buf(false, true)
+    spacer_buf_2 = vim.api.nvim_create_buf(false, true)
     spacer_win = vim.api.nvim_open_win(spacer_buf, false,
         {style = "minimal",relative='editor', row=1, col=0, width=80, height=1}
     )
-    vim.api.nvim_buf_set_lines(spacer_buf, 0, 0, false, {'======================================================'})
+    spacer_win_2 = vim.api.nvim_open_win(spacer_buf_2, false,
+        {style = "minimal",relative='editor', row=9, col=0, width=80, height=1}
+    )
+    vim.api.nvim_buf_set_lines(spacer_buf, 0, 0, false, {
+        '================================================================================'
+    })
+    vim.api.nvim_buf_set_lines(spacer_buf_2, 0, 0, false, {
+        '================================================================================'
+    })
 end
 
 
@@ -119,7 +134,7 @@ local function show_results()
 end
 
 local function grimoire()
-    open_terminal_window()
+    -- open_terminal_window()
     open_document_window()
     open_results_window()
     open_spacer_window()
