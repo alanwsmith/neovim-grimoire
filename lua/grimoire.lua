@@ -214,8 +214,19 @@ local function select_previous_index()
 end
 
 
+local function current_query_string()
+    log("Calling: current_query_string()")
+    query_string = vim.api.nvim_buf_get_lines(0, 0, 1, false)[1]
+    query_string = string.gsub(query_string, '%s*$', '')
+    query_string = string.gsub(query_string, '%s', '%%20')
+    return query_string 
+end
+
+
 local function show_results_dev()
-    log("Calling shot_results_dev()")
+    log("Calling: show_results_dev()")
+    selected_file_index = 0
+    log("New query:" .. current_query_string())
 end
 
 -- This has to be below `show_file()`
