@@ -76,7 +76,12 @@ local storage_dir = "/Users/alans/grimoire/mdx_files"
 
 ------------------------------------------------
 
-
+local function log(message)
+    local log_file = io.open("log.log", "a")
+    io.output(log_file)
+    io.write(message.."\n")
+    io.close(log_file)
+end
 
 local function close_windows()
     vim.api.nvim_win_close(rwin, true)
@@ -100,16 +105,32 @@ end
 
 local function jump_to_search() 
     vim.api.nvim_command('write!')
+
+    local data_to_update_with = vim.api.nvim_buf_get_lines(document_buffer, 0, -1, true) 
+
+    local data_as_string = ''
+
+    for i = 1, #data_to_update_with do  
+        data_as_string = data_as_string..data_to_update_with[i].." "
+    end
+
+    data_as_string = string.gsub(data_as_string, '[^a-zA-Z-]', ' ')
+    log(data_as_string)
+
+    local update_index_call = [[curl -X POST 'http://127.0.0.1:7700/indexes/grimoire/documents' --data '[{ "id": 1111111111111111112, "name": "aaaaaaaaa-test-insert.md", "overview": "hjkl uiop asdf qwer test" }]']]
+    vim.fn.systemlist(update_index_call)
+    log(update_index_call)
+
     vim.api.nvim_buf_set_lines(sbuf, 0, -1, false, {})
     vim.api.nvim_set_current_win(swin)
     vim.api.nvim_command('startinsert')
 end
 
-local function log(message)
-    local log_file = io.open("log.log", "a")
-    io.output(log_file)
-    io.write(message.."\n")
-    io.close(log_file)
+
+
+local function make_new_file()
+    log("Making new file")
+
 end
 
 
