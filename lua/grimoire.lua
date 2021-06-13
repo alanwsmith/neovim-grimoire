@@ -40,6 +40,7 @@ config.jump_to_search = '<C-l>'
 ------------------------------------------------
 
 -- [ ] Look at `nofile` for search and resutls windows
+-- [ ] Setup so `:q` closes all windows 
 -- TODO: Setup config file
 -- TODO: Only turn on hot keys when you're in the app 
 -- TODO: Save the last search and return to it when you reopen
@@ -64,23 +65,6 @@ local function jump_to_search()
     vim.api.nvim_buf_set_lines(sbuf, 0, -1, false, {})
     vim.api.nvim_set_current_win(swin)
     vim.api.nvim_command('startinsert')
-end
-
-local function open_terminal_window()
-    console_buffer = vim.api.nvim_create_buf(false, true)
-    console_window = vim.api.nvim_open_win(console_buffer, true,
-        { 
-            style="minimal", relative='editor', row=18, 
-            col=0, width=80, height=10
-        }
-    )
-    console_terminal = vim.api.nvim_open_term(console_buffer, {})
-end
-
-
-local function log(message)
-    vim.api.nvim_chan_send(console_terminal, message)
-    vim.api.nvim_chan_send(console_terminal, " ~ ")
 end
 
 -- TODO: Setup so that if you add spaces at the end of a string it does
@@ -175,8 +159,6 @@ local function show_results()
 end
 
 local function grimoire()
-    -- open_terminal_window()
-    -- log(tostring(vim.api.nvim_win_get_width(0)))
     open_document_window()
     open_results_window()
     open_search_window()
