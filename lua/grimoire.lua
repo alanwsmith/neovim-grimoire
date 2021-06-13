@@ -71,6 +71,7 @@ local storage_dir = "/Users/alans/grimoire/mdx_files"
 -- [ ] Make sure multiple instances can run at the same time (realizing small chance of editing the same file at the same time)
 -- [ ] Deal with windows that get resized
 -- [ ] Disable `:w` in the search window
+-- [ ] Remember the line number for each file for a specific amount of time
 
 
 ------------------------------------------------
@@ -145,8 +146,6 @@ end
 
 
 local function show_file()
-    -- TODO: Deal with no matches / no file
-
     if current_search_query ~= '' then 
         current_file_name = vim.api.nvim_buf_get_lines(rbuf, selected_file_index, (selected_file_index + 1), true)
         current_file_path = storage_dir..'/'..current_file_name[1]
@@ -155,6 +154,7 @@ local function show_file()
         for line in file:lines() do
             table.insert(lines_table, line)
         end
+        vim.api.nvim_win_set_cursor(document_window, {1, 0})
         vim.api.nvim_buf_set_lines(document_buffer, 0, -1, false, {})
         vim.api.nvim_buf_set_lines(document_buffer, 0, -1, false, lines_table)
     end
