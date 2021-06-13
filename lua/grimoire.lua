@@ -94,7 +94,8 @@ local function close_windows()
     vim.api.nvim_win_close(swin, true)
     -- vim.api.nvim_buf_delete(sbuf, { 'force', true })
     vim.api.nvim_win_close(document_window, true)
-    -- vim.api.nvim_buf_delete(document_buffer, { 'force', true })
+    vim.api.nvim_buf_delete(document_buffer, { force=true })
+    -- vim.api.nvim_buf_delete(document_buffer, {})
     -- vim.api.nvim_win_close(console_window, true)
 end
 
