@@ -219,14 +219,21 @@ local function current_query_string()
     query_string = vim.api.nvim_buf_get_lines(0, 0, 1, false)[1]
     query_string = string.gsub(query_string, '%s*$', '')
     query_string = string.gsub(query_string, '%s', '%%20')
+    query_string = string.gsub(query_string, '"', '')
+    log("New query string:" .. query_string)
     return query_string 
 end
 
+local function fetch_results()
+    log("Calling: fetch_results()")
+    local raw_json = vim.fn.systemlist('curl -s "http://127.0.0.1:7700/indexes/grimoire/search?q='..current_query_string()..'&limit='..result_list_length..'"')
+    -- log(raw_json[1])
+end
 
 local function show_results_dev()
     log("Calling: show_results_dev()")
     selected_file_index = 0
-    log("New query:" .. current_query_string())
+    fetch_results()
 end
 
 -- This has to be below `show_file()`
