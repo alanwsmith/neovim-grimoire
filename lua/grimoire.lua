@@ -16,11 +16,10 @@ local current_search_query = ''
 
 local config = {}
 
-config.results_move_down = '<C-j>'
-config.results_move_up = '<C-k>'
+config.results_move_down = '<M-LEFT>'
+config.results_move_up = '<M-RIGHT>'
 config.edit_document = '<C-l>'
 config.jump_to_search = '<C-l>'
-
 local storage_dir = "/Users/alans/grimoire/mdx_files"
 
 ------------------------------------------------
@@ -132,25 +131,6 @@ local function open_search_window()
 end
 
 
-local function select_next_index()
-    if selected_file_index < math.min((result_count - 1), (result_list_length - 1)) then
-        selected_file_index = selected_file_index + 1
-        vim.api.nvim_buf_clear_namespace(rbuf, -1, 0, -1)
-        vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
-        show_file()
-    end
-end
-
-local function select_previous_index()
-    if selected_file_index > 0 then
-        selected_file_index = selected_file_index - 1
-        vim.api.nvim_buf_clear_namespace(rbuf, -1, 0, -1)
-        vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
-        show_file()
-    end
-end
-
-
 
 local function show_file()
     -- TODO: Deal with no matches / no file
@@ -168,6 +148,24 @@ local function show_file()
     end
 end
 
+
+local function select_next_index()
+    if selected_file_index < math.min((result_count - 1), (result_list_length - 1)) then
+        selected_file_index = selected_file_index + 1
+        vim.api.nvim_buf_clear_namespace(rbuf, -1, 0, -1)
+        vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
+        show_file()
+    end
+end
+
+local function select_previous_index()
+    if selected_file_index > 0 then
+        selected_file_index = selected_file_index - 1
+        vim.api.nvim_buf_clear_namespace(rbuf, -1, 0, -1)
+        vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
+        show_file()
+    end
+end
 
 
 local function show_results()
