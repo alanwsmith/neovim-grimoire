@@ -12,14 +12,23 @@ local result_list_length = base_height - 5
 local current_file_name
 local current_file_path
 
+local config = {}
+
+config.results_move_down = '<C-j>'
+config.results_move_up = '<C-k>'
+config.edit_document = '<C-l>'
+config.jump_to_search = '<C-l>'
+
 ------------------------------------------------
 -- VERSION 1 Requirements 
 ------------------------------------------------
 -- [x] Search and show results 
 -- [x] Provide nav to move and up and down search results 
 -- [x] Show selected result in document window 
--- [ ] Be able to edit document in document window 
--- [ ] Save the file 
+-- [x] Be able to edit document in document window 
+-- [x] Save the file 
+-- [ ] Make sure it doesn't try to save empty
+-- [ ] If no search, show nothing in document
 
 ------------------------------------------------
 -- VERSION 2 Requirements 
@@ -46,11 +55,13 @@ local function edit_document()
     vim.api.nvim_set_current_win(document_window)
     vim.api.nvim_command('set buftype=""')
     vim.api.nvim_command('file '..current_file_path)
+    vim.api.nvim_command('stopinsert')
 end
 
 local function jump_to_search() 
     vim.api.nvim_command('write!')
     vim.api.nvim_set_current_win(swin)
+    vim.api.nvim_command('stopinsert')
 end
 
 local function open_terminal_window()
@@ -79,11 +90,11 @@ end
 
 local function close_windows()
     vim.api.nvim_win_close(rwin, true)
-    vim.api.nvim_buf_delete(rbuf, { 'force', true })
+    -- vim.api.nvim_buf_delete(rbuf, { 'force', true })
     vim.api.nvim_win_close(swin, true)
-    vim.api.nvim_buf_delete(sbuf, { 'force', true })
+    -- vim.api.nvim_buf_delete(sbuf, { 'force', true })
     vim.api.nvim_win_close(document_window, true)
-    vim.api.nvim_buf_delete(document_buffer, { 'force', true })
+    -- vim.api.nvim_buf_delete(document_buffer, { 'force', true })
     -- vim.api.nvim_win_close(console_window, true)
 end
 
@@ -112,6 +123,7 @@ local function show_file()
     for line in file:lines() do
         table.insert(lines_table, line)
     end
+    vim.api.nvim_buf_set_lines(document_buffer, 0, -1, false, {})
     vim.api.nvim_buf_set_lines(document_buffer, 0, -1, false, lines_table)
 end
 
@@ -184,53 +196,46 @@ local function grimoire()
     open_search_window()
     vim.api.nvim_buf_set_keymap(sbuf, 'i', '<F7>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
     vim.api.nvim_buf_set_keymap(sbuf, 'n', '<F7>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
+    vim.api.nvim_buf_set_keymap(rbuf, 'i', '<F7>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
+    vim.api.nvim_buf_set_keymap(rbuf, 'i', '<F7>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
+    vim.api.nvim_buf_set_keymap(document_buffer, 'n', '<F7>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
+    vim.api.nvim_buf_set_keymap(document_buffer, 'n', '<F7>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
 
 
-    vim.api.nvim_buf_set_keymap(document_buffer, 'n', '5', '<cmd>lua require"grimoire".jump_to_search()<CR>', {
-        nowait = true, 
-        noremap = true, 
-        silent = true
+    vim.api.nvim_buf_set_keymap(document_buffer, 'i', config.jump_to_search, '<cmd>lua require"grimoire".jump_to_search()<CR>', {
+        nowait = true, noremap = true, silent = true
     })
-    vim.api.nvim_buf_set_keymap(sbuf, 'i', '[', '<cmd>lua require"grimoire".select_next_index()<CR>', {
-        nowait = true, 
-        noremap = true, 
-        silent = true
+
+    vim.api.nvim_buf_set_keymap(document_buffer, 'n', config.jump_to_search, '<cmd>lua require"grimoire".jump_to_search()<CR>', {
+        nowait = true, noremap = true, silent = true
     })
-    vim.api.nvim_buf_set_keymap(sbuf, 'i', '=', '<cmd>lua require"grimoire".select_previous_index()<CR>', {
-        nowait = true, 
-        noremap = true, 
-        silent = true
+
+    vim.api.nvim_buf_set_keymap(sbuf, 'i', config.results_move_down, '<cmd>lua require"grimoire".select_next_index()<CR>', {
+        nowait = true, noremap = true, silent = true
     })
-    -- vim.api.nvim_buf_set_keymap(sbuf, 'i', ']', '<cmd>lua require"grimoire".open_file()<CR>', {
-    --     nowait = true, 
-    --     noremap = true, 
-    --     silent = true
-    -- })
+
+    vim.api.nvim_buf_set_keymap(sbuf, 'i', config.results_move_up, '<cmd>lua require"grimoire".select_previous_index()<CR>', {
+        nowait = true, noremap = true, silent = true
+    })
     
-    vim.api.nvim_buf_set_keymap(sbuf, 'i', ']', '<cmd>lua require"grimoire".edit_document()<CR>', {
-        nowait = true, 
-        noremap = true, 
-        silent = true
+    vim.api.nvim_buf_set_keymap(sbuf, 'i', config.edit_document, '<cmd>lua require"grimoire".edit_document()<CR>', {
+        nowait = true, noremap = true, silent = true
     })
-    vim.api.nvim_buf_set_keymap(sbuf, 'n', '[', '<cmd>lua require"grimoire".select_next_index()<CR>', {
-        nowait = true, 
-        noremap = true, 
-        silent = true
+
+    vim.api.nvim_buf_set_keymap(sbuf, 'n', config.results_move_down, '<cmd>lua require"grimoire".select_next_index()<CR>', {
+        nowait = true, noremap = true, silent = true
     })
-    vim.api.nvim_buf_set_keymap(sbuf, 'n', '=', '<cmd>lua require"grimoire".select_previous_index()<CR>', {
-        nowait = true, 
-        noremap = true, 
-        silent = true
+
+    vim.api.nvim_buf_set_keymap(sbuf, 'n', config.results_move_up, '<cmd>lua require"grimoire".select_previous_index()<CR>', {
+        nowait = true, noremap = true, silent = true
     })
-    -- vim.api.nvim_buf_set_keymap(sbuf, 'n', ']', '<cmd>lua require"grimoire".open_file()<CR>', {
-    --     nowait = true, 
-    --     noremap = true, 
-    --     silent = true
-    -- })
+
+    vim.api.nvim_buf_set_keymap(sbuf, 'n', config.edit_document, '<cmd>lua require"grimoire".edit_document()<CR>', {
+        nowait = true, noremap = true, silent = true
+    })
 
     vim.api.nvim_command('au CursorMoved,CursorMovedI <buffer> lua require"grimoire".show_results()')
-    io.output('log.log')
-    io.write("is this thing on")
+
 end
 
 return {
