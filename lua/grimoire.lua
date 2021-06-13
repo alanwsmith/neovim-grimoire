@@ -18,8 +18,8 @@ local config = {}
 
 config.results_move_down = '<M-LEFT>'
 config.results_move_up = '<M-RIGHT>'
-config.edit_document = '<C-l>'
-config.jump_to_search = '<C-l>'
+config.edit_document = '¬'
+config.jump_to_search = '¬'
 local storage_dir = "/Users/alans/grimoire/mdx_files"
 
 ------------------------------------------------
@@ -30,16 +30,21 @@ local storage_dir = "/Users/alans/grimoire/mdx_files"
 -- [x] Show selected result in document window 
 -- [x] Be able to edit document in document window 
 -- [x] Save the file 
--- [ ] Update the search index 
--- [ ] Make new files 
--- [ ] Make sure it doesn't try to save empty
+-- [ ] Update the search index on file changes
+-- [ ] Make new files (with template)
 -- [x] If no search, show nothing in document
 -- [x] Clear search on moving back to it. 
+-- [ ] Make sure files are saved on exit
+-- [ ] Set default text wrap to 64 characters
+-- [ ] Setup so `:q` closes all windows (saving the file first)
+-- [ ] Setup so `:w` saves a file
+-- [ ] Deal with empty query results
 
 
 ------------------------------------------------
 -- VERSION 2 Requirements 
 ------------------------------------------------
+-- [ ] Setup config file
 -- [ ] Delete files
 -- [ ] Rename files 
 
@@ -47,18 +52,25 @@ local storage_dir = "/Users/alans/grimoire/mdx_files"
 ------------------------------------------------
 -- Misc 
 ------------------------------------------------
+-- [ ] Add a log function
+-- [ ] Default to wordwrap
+-- [ ] Setup hotkey to toggle word wrap 
+-- [ ] Repopulate search with an escape (or something) when you go back to it
+-- [ ] Setup so the search results stay when moving back to search even though it clears
+-- [ ] Change `dd` in the search buffer so it returns to insert mode after clearing the line
+-- [ ] Make sure you can't add multiple lines in the search buffer
 -- [ ] Look at `nofile` for search and resutls windows
--- [ ] Setup so `:q` closes all windows 
--- [ ] Setup so whitespace at the end of queries is removed
--- [ ] Don't send a new request if nothing has changed (e.g. it's just a space)
--- [ ] Setup config file
--- [ ] Only turn on hot keys when you're in the app 
--- [ ] Show list of recent files (and their searches) with hotkeys to get back to
+-- [ ] Setup so whitespace at the end of queries is removed (and doesn't send a new query)
 -- [ ] Setup filter lists for modes where things get excluded from search (e.g. streamer mode)
--- [ ] Deal with windows that get resized
+-- [ ] Don't send a new request if nothing has changed (e.g. it's just a space)
+-- [ ] Only turn on hot keys when you're in the app (this might already be in place)
+-- [ ] Show list of recent files (and their searches) with hotkeys to get back to
 -- [ ] Prevent closing one window without closing all
 -- [ ] Setup so files are stored in a directory with the first word/token as the name 
--- [ ] Repopulate search with an escape (or something) when you go back to it
+-- [ ] Multiple templates for opening files (a default should open with a hot key then another hotkey to open a template selector)
+-- [ ] Make sure multiple instances can run at the same time (realizing small chance of editing the same file at the same time)
+-- [ ] Deal with windows that get resized
+-- [ ] Disable `:w` in the search window
 
 
 ------------------------------------------------
@@ -149,6 +161,7 @@ local function show_file()
 end
 
 
+-- This has to be below `show_file()`
 local function select_next_index()
     if selected_file_index < math.min((result_count - 1), (result_list_length - 1)) then
         selected_file_index = selected_file_index + 1
@@ -158,6 +171,7 @@ local function select_next_index()
     end
 end
 
+-- This has to be below `show_file()`
 local function select_previous_index()
     if selected_file_index > 0 then
         selected_file_index = selected_file_index - 1
@@ -167,7 +181,7 @@ local function select_previous_index()
     end
 end
 
-
+-- This has to be below `show_file()`
 local function show_results()
     selected_file_index = 0
     local query = vim.api.nvim_buf_get_lines(0, 0, 1, false)
