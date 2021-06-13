@@ -27,13 +27,14 @@ config.jump_to_search = '<C-l>'
 -- [x] Show selected result in document window 
 -- [x] Be able to edit document in document window 
 -- [x] Save the file 
+-- [ ] Make new files 
 -- [ ] Make sure it doesn't try to save empty
 -- [ ] If no search, show nothing in document
+-- [ ] Clear search on moving back to it. 
 
 ------------------------------------------------
 -- VERSION 2 Requirements 
 ------------------------------------------------
--- [ ] Make new files 
 -- [ ] Delete files
 -- [ ] Rename files 
 ------------------------------------------------
@@ -60,20 +61,17 @@ end
 
 local function jump_to_search() 
     vim.api.nvim_command('write!')
+    vim.api.nvim_buf_set_lines(sbuf, 0, -1, false, {})
     vim.api.nvim_set_current_win(swin)
-    vim.api.nvim_command('stopinsert')
+    vim.api.nvim_command('startinsert')
 end
 
 local function open_terminal_window()
     console_buffer = vim.api.nvim_create_buf(false, true)
     console_window = vim.api.nvim_open_win(console_buffer, true,
         { 
-            style="minimal",
-            relative='editor', 
-            row=18, 
-            col=0, 
-            width=80, 
-            height=10
+            style="minimal", relative='editor', row=18, 
+            col=0, width=80, height=10
         }
     )
     console_terminal = vim.api.nvim_open_term(console_buffer, {})
@@ -90,12 +88,11 @@ end
 
 local function close_windows()
     vim.api.nvim_win_close(rwin, true)
-    -- vim.api.nvim_buf_delete(rbuf, { 'force', true })
+    vim.api.nvim_buf_delete(rbuf, { force=true })
     vim.api.nvim_win_close(swin, true)
-    -- vim.api.nvim_buf_delete(sbuf, { 'force', true })
+    vim.api.nvim_buf_delete(sbuf, { force=true })
     vim.api.nvim_win_close(document_window, true)
     vim.api.nvim_buf_delete(document_buffer, { force=true })
-    -- vim.api.nvim_buf_delete(document_buffer, {})
     -- vim.api.nvim_win_close(console_window, true)
 end
 
@@ -103,13 +100,8 @@ local function open_search_window()
     sbuf = vim.api.nvim_create_buf(false, true)
     swin = vim.api.nvim_open_win(sbuf, true ,
             {
-                style="minimal", 
-                relative='editor', 
-                row=0, 
-                col=0, 
-                width=base_width - 2, 
-                height=1, 
-                border='single'
+                style="minimal", relative='editor', row=0, col=0, 
+                width=base_width - 2, height=1, border='single'
             }
         )
     vim.cmd('startinsert')
@@ -151,13 +143,10 @@ local function open_document_window()
     document_buffer = vim.api.nvim_create_buf(false, true)
     document_window = vim.api.nvim_open_win(document_buffer, true ,
         { 
-            style="minimal",
-            relative='editor', 
-            row=3, 
+            style="minimal", relative='editor', row=3, 
             col=math.floor(base_width / 4) + 2, 
             width=math.floor(base_width / 4 * 3) - 3,
-            height=base_height - 5,
-            border='single'
+            height=base_height - 5, border='single'
         }
     )
 end
@@ -166,12 +155,8 @@ local function open_results_window()
   rbuf = vim.api.nvim_create_buf(false, true)
   rwin = vim.api.nvim_open_win(rbuf, false,
         {
-            style="minimal",
-            relative='editor', 
-            row=3, 
-            col=0, 
-            width=math.floor(base_width / 4), 
-            height=base_height - 5,
+            style="minimal", relative='editor', row=3, col=0, 
+            width=math.floor(base_width / 4), height=base_height - 5,
             border='single'
         }
     )
