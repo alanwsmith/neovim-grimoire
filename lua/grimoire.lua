@@ -189,10 +189,12 @@ local function show_results()
     local query_string2 = string.gsub(query_string, '%s', '%%20')
     current_search_query = query_string2 
     local lines = vim.fn.systemlist('curl -s "http://127.0.0.1:7700/indexes/grimoire/search?q='..query_string2..'&limit='..result_list_length..'" | jq -r ".hits[] | .name"')
-    vim.api.nvim_buf_set_lines(rbuf, 0, result_list_length, false, lines)
-    result_count = #lines
-    highlight_namespace = vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
-    show_file()
+    if #lines > 0 then
+        vim.api.nvim_buf_set_lines(rbuf, 0, result_list_length, false, lines)
+        result_count = #lines
+        highlight_namespace = vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
+        show_file()
+    end
 end
 
 
