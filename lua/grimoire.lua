@@ -38,7 +38,7 @@ local storage_dir = "/Users/alans/grimoire/mdx_files"
 -- [ ] Set default text wrap to 64 characters
 -- [ ] Setup so `:q` closes all windows (saving the file first)
 -- [ ] Setup so `:w` saves a file
--- [ ] Deal with empty query results
+-- [x] Deal with empty query results
 
 
 ------------------------------------------------
@@ -52,7 +52,7 @@ local storage_dir = "/Users/alans/grimoire/mdx_files"
 ------------------------------------------------
 -- Misc 
 ------------------------------------------------
--- [ ] Add a log function
+-- [x] Add a log function
 -- [ ] Default to wordwrap
 -- [ ] Setup hotkey to toggle word wrap 
 -- [ ] Repopulate search with an escape (or something) when you go back to it
@@ -105,6 +105,13 @@ local function jump_to_search()
     vim.api.nvim_command('startinsert')
 end
 
+local function log(message)
+    local log_file = io.open("log.log", "a")
+    io.output(log_file)
+    io.write(message.."\n")
+    io.close(log_file)
+end
+
 
 -- TODO: Remove this when show_file() is done
 local function open_document_window()
@@ -142,8 +149,6 @@ local function open_search_window()
         )
     vim.cmd('startinsert')
 end
-
-
 
 local function show_file()
     if current_search_query ~= '' then 
@@ -199,6 +204,7 @@ end
 
 
 local function grimoire()
+    log("Grimoire Activated")
     open_document_window()
     open_results_window()
     open_search_window()
