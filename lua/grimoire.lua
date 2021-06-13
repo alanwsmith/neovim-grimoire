@@ -34,8 +34,8 @@ local storage_dir = "/Users/alans/grimoire/mdx_files"
 -- [ ] Update the search index 
 -- [ ] Make new files 
 -- [ ] Make sure it doesn't try to save empty
--- [ ] If no search, show nothing in document
--- [ ] Clear search on moving back to it. 
+-- [x] If no search, show nothing in document
+-- [x] Clear search on moving back to it. 
 
 
 ------------------------------------------------
@@ -54,31 +54,16 @@ local storage_dir = "/Users/alans/grimoire/mdx_files"
 -- [ ] Don't send a new request if nothing has changed (e.g. it's just a space)
 -- [ ] Setup config file
 -- [ ] Only turn on hot keys when you're in the app 
--- [ ] Save the last search and return to it when you reopen
 -- [ ] Show list of recent files (and their searches) with hotkeys to get back to
 -- [ ] Setup filter lists for modes where things get excluded from search (e.g. streamer mode)
 -- [ ] Deal with windows that get resized
 -- [ ] Prevent closing one window without closing all
 -- [ ] Setup so files are stored in a directory with the first word/token as the name 
+-- [ ] Repopulate search with an escape (or something) when you go back to it
 
 
 ------------------------------------------------
 
-
-
-local function edit_document() 
-    vim.api.nvim_set_current_win(document_window)
-    vim.api.nvim_command('set buftype=""')
-    vim.api.nvim_command('file '..current_file_path)
-    vim.api.nvim_command('stopinsert')
-end
-
-local function jump_to_search() 
-    vim.api.nvim_command('write!')
-    vim.api.nvim_buf_set_lines(sbuf, 0, -1, false, {})
-    vim.api.nvim_set_current_win(swin)
-    vim.api.nvim_command('startinsert')
-end
 
 
 local function close_windows()
@@ -92,50 +77,22 @@ local function close_windows()
     -- vim.api.nvim_win_close(console_window, true)
 end
 
-local function open_search_window()
-    sbuf = vim.api.nvim_create_buf(false, true)
-    swin = vim.api.nvim_open_win(sbuf, true ,
-            {
-                style="minimal", relative='editor', row=0, col=0, 
-                width=base_width - 2, height=1, border='single'
-            }
-        )
-    vim.cmd('startinsert')
+
+local function edit_document() 
+    vim.api.nvim_set_current_win(document_window)
+    vim.api.nvim_command('set buftype=""')
+    vim.api.nvim_command('file '..current_file_path)
+    vim.api.nvim_command('stopinsert')
 end
 
-local function show_file()
-    -- TODO: Deal with no matches / no file
 
-    if current_search_query ~= '' then 
-        current_file_name = vim.api.nvim_buf_get_lines(rbuf, selected_file_index, (selected_file_index + 1), true)
-        current_file_path = storage_dir..'/'..current_file_name[1]
-        local file = io.open(current_file_path, "r")
-        local lines_table = {}
-        for line in file:lines() do
-            table.insert(lines_table, line)
-        end
-        vim.api.nvim_buf_set_lines(document_buffer, 0, -1, false, {})
-        vim.api.nvim_buf_set_lines(document_buffer, 0, -1, false, lines_table)
-    end
+local function jump_to_search() 
+    vim.api.nvim_command('write!')
+    vim.api.nvim_buf_set_lines(sbuf, 0, -1, false, {})
+    vim.api.nvim_set_current_win(swin)
+    vim.api.nvim_command('startinsert')
 end
 
-local function select_next_index()
-    if selected_file_index < math.min((result_count - 1), (result_list_length - 1)) then
-        selected_file_index = selected_file_index + 1
-        vim.api.nvim_buf_clear_namespace(rbuf, -1, 0, -1)
-        vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
-        show_file()
-    end
-end
-
-local function select_previous_index()
-    if selected_file_index > 0 then
-        selected_file_index = selected_file_index - 1
-        vim.api.nvim_buf_clear_namespace(rbuf, -1, 0, -1)
-        vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
-        show_file()
-    end
-end
 
 -- TODO: Remove this when show_file() is done
 local function open_document_window()
@@ -161,6 +118,58 @@ local function open_results_window()
     )
 end
 
+
+
+local function open_search_window()
+    sbuf = vim.api.nvim_create_buf(false, true)
+    swin = vim.api.nvim_open_win(sbuf, true ,
+            {
+                style="minimal", relative='editor', row=0, col=0, 
+                width=base_width - 2, height=1, border='single'
+            }
+        )
+    vim.cmd('startinsert')
+end
+
+
+local function select_next_index()
+    if selected_file_index < math.min((result_count - 1), (result_list_length - 1)) then
+        selected_file_index = selected_file_index + 1
+        vim.api.nvim_buf_clear_namespace(rbuf, -1, 0, -1)
+        vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
+        show_file()
+    end
+end
+
+local function select_previous_index()
+    if selected_file_index > 0 then
+        selected_file_index = selected_file_index - 1
+        vim.api.nvim_buf_clear_namespace(rbuf, -1, 0, -1)
+        vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
+        show_file()
+    end
+end
+
+
+
+local function show_file()
+    -- TODO: Deal with no matches / no file
+
+    if current_search_query ~= '' then 
+        current_file_name = vim.api.nvim_buf_get_lines(rbuf, selected_file_index, (selected_file_index + 1), true)
+        current_file_path = storage_dir..'/'..current_file_name[1]
+        local file = io.open(current_file_path, "r")
+        local lines_table = {}
+        for line in file:lines() do
+            table.insert(lines_table, line)
+        end
+        vim.api.nvim_buf_set_lines(document_buffer, 0, -1, false, {})
+        vim.api.nvim_buf_set_lines(document_buffer, 0, -1, false, lines_table)
+    end
+end
+
+
+
 local function show_results()
     selected_file_index = 0
     local query = vim.api.nvim_buf_get_lines(0, 0, 1, false)
@@ -173,6 +182,7 @@ local function show_results()
     highlight_namespace = vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
     show_file()
 end
+
 
 local function grimoire()
     open_document_window()
