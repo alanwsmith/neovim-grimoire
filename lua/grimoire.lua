@@ -14,6 +14,8 @@ local current_file_path
 
 local current_search_query = ''
 
+local results_set = {} 
+
 local config = {}
 
 config.results_move_down = '<M-LEFT>'
@@ -21,6 +23,9 @@ config.results_move_up = '<M-RIGHT>'
 config.edit_document = '¬'
 config.jump_to_search = '¬'
 local storage_dir = "/Users/alans/grimoire/mdx_files"
+
+
+
 
 ------------------------------------------------
 -- VERSION 1 Requirements 
@@ -79,6 +84,7 @@ local storage_dir = "/Users/alans/grimoire/mdx_files"
 local function log(message)
     local log_file = io.open("log.log", "a")
     io.output(log_file)
+    io.write(os.date("%c").."\n")
     io.write(message.."\n")
     io.close(log_file)
 end
@@ -207,6 +213,11 @@ local function select_previous_index()
     end
 end
 
+
+local function show_results_dev()
+    log("Calling shot_results_dev()")
+end
+
 -- This has to be below `show_file()`
 local function show_results()
     selected_file_index = 0
@@ -221,7 +232,10 @@ local function show_results()
         highlight_namespace = vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
         show_file()
     end
+    show_results_dev()
 end
+
+
 
 
 local function grimoire()
