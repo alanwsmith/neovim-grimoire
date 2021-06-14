@@ -1,3 +1,5 @@
+local cjson = require "cjson"
+
 local sbuf, swin
 local document_buffer, document_window 
 local selected_file_index = 0
@@ -7,6 +9,7 @@ local console_buffer, console_window, console_terminal
 
 local base_width = vim.api.nvim_win_get_width(0)
 local base_height = vim.api.nvim_win_get_height(0)
+
 local result_list_length = base_height - 5 
 
 local current_file_name
@@ -14,7 +17,7 @@ local current_file_path
 
 local current_search_query = ''
 
-local results_set = {} 
+local current_result_set = {} 
 
 local config = {}
 
@@ -227,13 +230,24 @@ end
 local function fetch_results()
     log("Calling: fetch_results()")
     local raw_json = vim.fn.systemlist('curl -s "http://127.0.0.1:7700/indexes/grimoire/search?q='..current_query_string()..'&limit='..result_list_length..'"')
-    -- log(raw_json[1])
+    local json_data = cjson.decode(raw_json[1])
+    current_result_set = json_data['hits']
 end
 
 local function show_results_dev()
     log("Calling: show_results_dev()")
     selected_file_index = 0
     fetch_results()
+    if #current_result_set > 0 then
+        local number_of_result_lines = math.min(result_list_length, #current_result_set)
+        for i = 1, number_of_result_lines do
+            log("id"..current_result_set[i]['id'])
+        end
+        -- vim.api.nvim_buf_set_lines(rbuf, 0, result_list_length, false, lines)
+        -- result_count = #lines
+        -- highlight_namespace = vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
+        -- show_file()
+    end
 end
 
 -- This has to be below `show_file()`
