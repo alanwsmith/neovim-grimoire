@@ -50,6 +50,7 @@ local state = {
 ------------------------------------------------
 -- Other/Misc 
 ------------------------------------------------
+-- [ ] On save, run greps through the file looking for patterns and if they match fire off to external scripts
 -- [ ] Setup so if there are no results it shows a window saying that in both results and the document
 -- [ ] See if there's a way to insert a few millisecond delay so that while you're typing it doesn't slow down opening files (may not be worth doing)
 -- [ ] Setup so `:q` closes all windows (saving the file first, or blocking if it's not ready) 
@@ -217,8 +218,12 @@ local function show_file()
         vim.api.nvim_buf_set_lines(document_buffer, 0, 1, false, { "" } )
         vim.api.nvim_buf_set_lines(document_buffer, 1, 2, false, { "" } )
         vim.api.nvim_buf_set_lines(document_buffer, 2, 3, false, { "" } )
-        vim.api.nvim_buf_set_lines(document_buffer, 3, 4, false, { "" } )
-        vim.api.nvim_buf_set_lines(document_buffer, 4, 5, false, { "                   ---  Grimoire  ---" } )
+        vim.api.nvim_buf_set_lines(document_buffer, 4, 5, false, { "" } )
+        vim.api.nvim_buf_set_lines(document_buffer, 5, 6, false, { "" } )
+        vim.api.nvim_buf_set_lines(document_buffer, 6, 7, false, { "" } )
+        vim.api.nvim_buf_set_lines(document_buffer, 7, 8, false, { "" } )
+        vim.api.nvim_buf_set_lines(document_buffer, 8, 9, false, { "" } )
+        vim.api.nvim_buf_set_lines(document_buffer, 9, 10, false, { "                     ---  Grimoire  ---" } )
     end
 end
 
@@ -266,20 +271,26 @@ local function show_results()
     -- log("Calling: show_results()")
     state.selection_index = 0 
     fetch_results()
-    if #current_result_set > 0 then
-        local number_of_result_lines = math.min(result_list_length, #current_result_set)
-        vim.api.nvim_buf_set_lines(rbuf, 0, result_list_length, false, {})
-        for i = 1, number_of_result_lines do
-            -- log("id"..current_result_set[i]['id'])
-            vim.api.nvim_buf_set_lines(rbuf, i - 1, i, false, { current_result_set[i]['name'] })
+    if current_search_query ~= '' then 
+        if #current_result_set > 0 then
+            local number_of_result_lines = math.min(result_list_length, #current_result_set)
+            vim.api.nvim_buf_set_lines(rbuf, 0, result_list_length, false, {})
+            for i = 1, number_of_result_lines do
+                -- log("id"..current_result_set[i]['id'])
+                vim.api.nvim_buf_set_lines(rbuf, i - 1, i, false, { current_result_set[i]['name'] })
+            end
+            log("number of result lines: "..#current_result_set)
+            result_count = #current_result_set 
+            highlight_namespace = vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', state.selection_index, 0, -1)
+            show_file()
+        else
+            vim.api.nvim_buf_set_lines(rbuf, 0, result_list_length, false, {})
+            vim.api.nvim_buf_set_lines(rbuf, 0, -1, false, { "No results"})
+            show_file()
         end
-        log("number of result lines: "..#current_result_set)
-        result_count = #current_result_set 
-        highlight_namespace = vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', state.selection_index, 0, -1)
-        show_file()
     else
         vim.api.nvim_buf_set_lines(rbuf, 0, result_list_length, false, {})
-        vim.api.nvim_buf_set_lines(rbuf, 0, -1, false, { "No results"})
+        vim.api.nvim_buf_set_lines(rbuf, 0, 1, false, { "    -- Begin Your Search --"})
         show_file()
     end
 
