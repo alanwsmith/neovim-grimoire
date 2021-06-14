@@ -29,7 +29,6 @@ local storage_dir = "/Users/alans/grimoire/mdx_files"
 
 
 
-
 ------------------------------------------------
 -- VERSION 1 Requirements 
 ------------------------------------------------
@@ -100,7 +99,6 @@ local function close_windows()
     vim.api.nvim_win_close(document_window, true)
     vim.api.nvim_buf_delete(document_buffer, { force=true })
     vim.api.nvim_command('stopinsert')
-    -- vim.api.nvim_win_close(console_window, true)
 end
 
 
@@ -137,8 +135,6 @@ local function make_new_file()
     log("Making new file")
 end
 
-
--- TODO: Remove this when show_file() is done
 local function open_document_window()
     document_buffer = vim.api.nvim_create_buf(false, true)
     document_window = vim.api.nvim_open_win(document_buffer, true ,
@@ -152,8 +148,8 @@ local function open_document_window()
 end
 
 local function open_results_window()
-  rbuf = vim.api.nvim_create_buf(false, true)
-  rwin = vim.api.nvim_open_win(rbuf, false,
+    rbuf = vim.api.nvim_create_buf(false, true)
+    rwin = vim.api.nvim_open_win(rbuf, false,
         {
             style="minimal", relative='editor', row=3, col=0, 
             width=math.floor(base_width / 4), height=base_height - 5,
@@ -161,7 +157,6 @@ local function open_results_window()
         }
     )
 end
-
 
 
 local function open_search_window()
@@ -221,6 +216,7 @@ local function current_query_string()
     query_string = string.gsub(query_string, '%s', '%%20')
     query_string = string.gsub(query_string, '"', '')
     log("New query string:" .. query_string)
+    -- TODO: make this just one thing that's global in `state`
     current_search_query = query_string
     return query_string 
 end
@@ -249,25 +245,6 @@ local function show_results()
         show_file()
     end
 end
-
--- This has to be below `show_file()`
-local function show_results_old()
-    selected_file_index = 0
-    local query = vim.api.nvim_buf_get_lines(0, 0, 1, false)
-    local query_string = string.gsub(query[1], '%s*$', '')
-    local query_string2 = string.gsub(query_string, '%s', '%%20')
-    current_search_query = query_string2 
-    local lines = vim.fn.systemlist('curl -s "http://127.0.0.1:7700/indexes/grimoire/search?q='..query_string2..'&limit='..result_list_length..'" | jq -r ".hits[] | .name"')
-    if #lines > 0 then
---         vim.api.nvim_buf_set_lines(rbuf, 0, result_list_length, false, lines)
---         result_count = #lines
---         highlight_namespace = vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
-         -- show_file()
-    end
-    show_results_dev()
-end
-
-
 
 
 local function grimoire()
@@ -325,7 +302,6 @@ return {
     grimoire = grimoire,
     jump_to_search = jump_to_search, 
     close_windows = close_windows,
-    open_file = open_file, 
     show_results = show_results,
     select_next_index = select_next_index,
     select_previous_index = select_previous_index, 
