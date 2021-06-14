@@ -81,7 +81,7 @@ local state = {
 -- [ ] Setup hotkey to jump to code blocks and auto highlight them 
 -- [ ] Setup hotkey to execute code blocks and put resutls into a results code block if one exists
 -- [ ] Make sure you can't add multiple lines in the search buffer
--- [ ] Hotkeys to copy stuff out to pasteboards
+-- [ ] Hotkeys to copy stuff out to OS pasteboards
 -- [ ] Look at `nofile` for search and resutls windows
 -- [ ] Setup so whitespace at the end of queries is removed (and doesn't send a new query)
 -- [ ] Auto-publish to twitter when you make a post 
@@ -214,16 +214,12 @@ local function show_file()
         end
     else
         vim.api.nvim_win_set_cursor(document_window, {1, 0})
+        local header_text = {
+            "", "", "", "",
+"                     ---  Grimoire  ---"
+        }
         vim.api.nvim_buf_set_lines(document_buffer, 0, -1, false, {})
-        vim.api.nvim_buf_set_lines(document_buffer, 0, 1, false, { "" } )
-        vim.api.nvim_buf_set_lines(document_buffer, 1, 2, false, { "" } )
-        vim.api.nvim_buf_set_lines(document_buffer, 2, 3, false, { "" } )
-        vim.api.nvim_buf_set_lines(document_buffer, 4, 5, false, { "" } )
-        vim.api.nvim_buf_set_lines(document_buffer, 5, 6, false, { "" } )
-        vim.api.nvim_buf_set_lines(document_buffer, 6, 7, false, { "" } )
-        vim.api.nvim_buf_set_lines(document_buffer, 7, 8, false, { "" } )
-        vim.api.nvim_buf_set_lines(document_buffer, 8, 9, false, { "" } )
-        vim.api.nvim_buf_set_lines(document_buffer, 9, 10, false, { "                     ---  Grimoire  ---" } )
+        vim.api.nvim_buf_set_lines(document_buffer, 0, -1, false, header_text)
     end
 end
 
@@ -290,7 +286,7 @@ local function show_results()
         end
     else
         local symbol_start = {
-"  ~~ Begin Your Search ~~",    
+"  ~~~~~~~~~~~~~~~~~~~~~~~",    
 "",
 "        <--.",
 "   <-.   <  )  ;`a__",
@@ -298,7 +294,7 @@ local function show_results()
 "       \\__|___)/",
 "        \\~   \\~",
 "",
-"  ~~~~~~~~~~~~~~~~~~~~~~~",  
+"  ~~ Begin Your Search ~~",  
 }
          vim.api.nvim_buf_set_lines(rbuf, 0, 8, false, symbol_start )
 --         vim.api.nvim_buf_set_lines(rbuf, 0, result_list_length, false, {})
