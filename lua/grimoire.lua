@@ -5,16 +5,11 @@ local document_buffer, document_window
 local highlight_namespace
 local result_count = 0 
 local console_buffer, console_window, console_terminal
-
 local base_width = vim.api.nvim_win_get_width(0)
 local base_height = vim.api.nvim_win_get_height(0)
-
 local result_list_length = base_height - 5 
-
 local current_search_query = ''
-
 local current_result_set = {} 
-
 local config = {}
 
 config.results_move_down = '<M-LEFT>'
@@ -23,13 +18,9 @@ config.edit_document = '¬'
 config.jump_to_search = '¬'
 config.storage_dir = "/Users/alans/grimoire/mdx_files"
 
--- TODO: Remove this when its' in config 
-local storage_dir = "/Users/alans/grimoire/mdx_files"
-
 local state = {
     selection_index = 0
 } 
-
 
 ------------------------------------------------
 -- VERSION 1 Requirements 
@@ -44,11 +35,7 @@ local state = {
 -- [x] If no search, show nothing in document
 -- [x] Clear search on moving back to it. 
 -- [ ] Make sure files are saved on exit
--- [ ] Set default text wrap to 64 characters
--- [ ] Setup so `:q` closes all windows (saving the file first)
--- [ ] Setup so `:w` saves a file
 -- [x] Deal with empty query results
-
 
 ------------------------------------------------
 -- VERSION 2 Requirements 
@@ -56,13 +43,21 @@ local state = {
 -- [ ] Setup config file
 -- [ ] Delete files
 -- [ ] Rename files 
-
+-- [ ] Setup so `:q` closes all windows (saving the file first)
+-- [ ] Setup so `:w` saves a file
 
 ------------------------------------------------
--- Misc 
+-- Other/Misc 
 ------------------------------------------------
--- [x] Add a log function
 -- [ ] Default to wordwrap
+-- [ ] Set default text wrap to 64 characters
+-- [ ] Hotkey to turn off wordwrap 
+-- [ ] Auto-disable wordwrap in code fences/code blocks
+-- [x] Add a log function
+-- [ ] Maybe setup a split window hotkey for a way to softwrap text 
+-- [ ] Generate symbolic links based of patterns for posting to the site
+-- [ ] Trigger a site build and deploy on file changes
+-- [ ] Start up debug version of the site for preview
 -- [ ] Setup hotkey to toggle word wrap 
 -- [ ] Repopulate search with an escape (or something) when you go back to it
 -- [ ] Setup so the search results stay when moving back to search even though it clears
@@ -82,7 +77,7 @@ local state = {
 -- [ ] Disable `:w` in the search window
 -- [ ] Remember the line number for each file for a specific amount of time
 -- [ ] Don't re-render the document windnow if the selected document hasn't changed 
-
+-- [ ] Deal with files that are deleted outside neovim
 
 ------------------------------------------------
 
@@ -94,13 +89,11 @@ local function log(message)
     io.close(log_file)
 end
 
-
 local function current_file_path()
     local file_name = current_result_set[state.selection_index + 1]['name']
     local file_path = config.storage_dir..'/'..file_name
     return file_path
 end
-
 
 local function close_windows()
     vim.api.nvim_win_close(rwin, true)
@@ -112,14 +105,12 @@ local function close_windows()
     vim.api.nvim_command('stopinsert')
 end
 
-
 local function edit_document() 
     vim.api.nvim_set_current_win(document_window)
     vim.api.nvim_command('set buftype=""')
     vim.api.nvim_command('file '..current_file_path())
     vim.api.nvim_command('stopinsert')
 end
-
 
 local function jump_to_search() 
     vim.api.nvim_command('write!')
@@ -139,8 +130,6 @@ local function jump_to_search()
     vim.api.nvim_set_current_win(swin)
     vim.api.nvim_command('startinsert')
 end
-
-
 
 local function make_new_file()
     log("Making new file")
@@ -168,7 +157,6 @@ local function open_results_window()
         }
     )
 end
-
 
 local function open_search_window()
     sbuf = vim.api.nvim_create_buf(false, true)
@@ -216,7 +204,6 @@ local function select_previous_index()
     end
 end
 
-
 local function current_query_string()
     log("Calling: current_query_string()")
     query_string = vim.api.nvim_buf_get_lines(0, 0, 1, false)[1]
@@ -254,7 +241,6 @@ local function show_results()
     end
 end
 
-
 local function grimoire()
     log("Grimoire Activated")
     open_document_window()
@@ -263,8 +249,8 @@ local function grimoire()
     vim.api.nvim_buf_set_keymap(sbuf, 'i', '<F7>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
     vim.api.nvim_buf_set_keymap(sbuf, 'n', '<F7>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
     vim.api.nvim_buf_set_keymap(rbuf, 'i', '<F7>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
-    vim.api.nvim_buf_set_keymap(rbuf, 'i', '<F7>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
-    vim.api.nvim_buf_set_keymap(document_buffer, 'n', '<F7>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
+    vim.api.nvim_buf_set_keymap(rbuf, 'n', '<F7>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
+    vim.api.nvim_buf_set_keymap(document_buffer, 'i', '<F7>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
     vim.api.nvim_buf_set_keymap(document_buffer, 'n', '<F7>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
 
     vim.api.nvim_buf_set_keymap(document_buffer, 'i', config.jump_to_search, '<cmd>lua require"grimoire".jump_to_search()<CR>', {
