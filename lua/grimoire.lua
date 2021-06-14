@@ -34,7 +34,7 @@ local state = {
 -- [ ] Make new files (with template)
 -- [x] If no search, show nothing in document
 -- [x] Clear search on moving back to it. 
--- [ ] Make sure files are saved on exit
+-- [ ] Make sure files are saved on exit (e.g. if you exit while still in the document window)
 -- [x] Deal with empty query results
 
 ------------------------------------------------
@@ -52,16 +52,22 @@ local state = {
 -- [x] Default to wordwrap
 -- [x] Maybe just set the window size directly
 -- [x] Add a log function
+-- [ ] Full screen toggle that also switches off wordwrap. Bascially a way to go from prose to code
 -- [ ] Hotkey to turn off wordwrap 
 -- [ ] Auto-disable wordwrap in code fences/code blocks
 -- [ ] Generate symbolic links based of patterns for posting to the site
+-- [ ] Auto-publish to twitter when you make a post 
 -- [ ] Start up debug version of the site for preview
+-- [ ] Highlight the boreder of the window you're currently in 
+-- [ ] High YAML Headers (except for title)
 -- [ ] Setup hotkey to toggle word wrap 
+-- [ ] Setup multiple window option for horizontal and/or vertical 
 -- [ ] Repopulate search with an escape (or something) when you go back to it
 -- [ ] Setup so the search results stay when moving back to search even though it clears
 -- [ ] Trigger a site build and deploy on file changes
 -- [ ] Change `dd` in the search buffer so it returns to insert mode after clearing the line
 -- [ ] Make sure you can't add multiple lines in the search buffer
+-- [ ] Hotkeys to copy stuff out to pasteboards
 -- [ ] Look at `nofile` for search and resutls windows
 -- [ ] Setup so whitespace at the end of queries is removed (and doesn't send a new query)
 -- [ ] Setup filter lists for modes where things get excluded from search (e.g. streamer mode)
@@ -175,7 +181,7 @@ local function open_search_window()
 end
 
 local function show_file()
-    log("Calling: show_file()")
+    -- log("Calling: show_file()")
     if current_search_query ~= '' then 
         log("Showing file: "..current_file_path())
         local file = io.open(current_file_path(), "r")
@@ -210,26 +216,27 @@ local function select_previous_index()
 end
 
 local function current_query_string()
-    log("Calling: current_query_string()")
+    -- log("Calling: current_query_string()")
     query_string = vim.api.nvim_buf_get_lines(0, 0, 1, false)[1]
     query_string = string.gsub(query_string, '%s*$', '')
     query_string = string.gsub(query_string, '%s', '%%20')
     query_string = string.gsub(query_string, '"', '')
-    log("New query string:" .. query_string)
+    -- log("New query string:" .. query_string)
     -- TODO: make this just one thing that's global in `state`
     current_search_query = query_string
     return query_string 
 end
 
 local function fetch_results()
-    log("Calling: fetch_results()")
-    local raw_json = vim.fn.systemlist('curl -s "http://127.0.0.1:7700/indexes/grimoire/search?q='..current_query_string()..'&limit='..result_list_length..'"')
+    local search_query = 'curl -s "http://127.0.0.1:7700/indexes/grimoire/search?q='..current_query_string()..'&limit='..result_list_length..'"'
+    log("Calling: "..search_query)
+    local raw_json = vim.fn.systemlist(search_query)
     local json_data = cjson.decode(raw_json[1])
     current_result_set = json_data['hits']
 end
 
 local function show_results()
-    log("Calling: show_results()")
+    -- log("Calling: show_results()")
     state.selection_index = 0 
     fetch_results()
     if #current_result_set > 0 then
