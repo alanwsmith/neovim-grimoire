@@ -120,11 +120,11 @@ local function jump_to_search()
         data_as_string = data_as_string..data_to_update_with[i].." "
     end
     data_as_string = string.gsub(data_as_string, '[^a-zA-Z-]', ' ')
-    log(data_as_string)
+    -- log(data_as_string)
 
     local update_index_call = [[curl -X POST 'http://127.0.0.1:7700/indexes/grimoire/documents' --data '[{ "id": 1111111111111111112, "name": "aaaaaaaaa-test-insert.md", "overview": "hjkl uiop asdf qwer test" }]']]
     vim.fn.systemlist(update_index_call)
-    log(update_index_call)
+    -- log(update_index_call)
 
     vim.api.nvim_buf_set_lines(sbuf, 0, -1, false, {})
     vim.api.nvim_set_current_win(swin)
@@ -176,9 +176,11 @@ local function open_search_window()
 end
 
 local function show_file()
+    log("Calling: show_file()")
     if current_search_query ~= '' then 
         current_file_name = vim.api.nvim_buf_get_lines(rbuf, selected_file_index, (selected_file_index + 1), true)
         current_file_path = storage_dir..'/'..current_file_name[1]
+        log("Current File Path: "..current_file_path)
         local file = io.open(current_file_path, "r")
         local lines_table = {}
         for line in file:lines() do
@@ -219,6 +221,7 @@ local function current_query_string()
     query_string = string.gsub(query_string, '%s', '%%20')
     query_string = string.gsub(query_string, '"', '')
     log("New query string:" .. query_string)
+    current_search_query = query_string
     return query_string 
 end
 
@@ -229,26 +232,26 @@ local function fetch_results()
     current_result_set = json_data['hits']
 end
 
-local function show_results_dev()
-    log("Calling: show_results_dev()")
+local function show_results()
+    log("Calling: show_results()")
     selected_file_index = 0
     fetch_results()
     if #current_result_set > 0 then
         local number_of_result_lines = math.min(result_list_length, #current_result_set)
         vim.api.nvim_buf_set_lines(rbuf, 0, result_list_length, false, {})
         for i = 1, number_of_result_lines do
-            log("id"..current_result_set[i]['id'])
+            -- log("id"..current_result_set[i]['id'])
             vim.api.nvim_buf_set_lines(rbuf, i - 1, i, false, { current_result_set[i]['name'] })
         end
-        -- vim.api.nvim_buf_set_lines(rbuf, 0, result_list_length, false, lines)
-        -- result_count = #lines
-        -- highlight_namespace = vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
+        log("number of result lines: "..#current_result_set)
+        result_count = #current_result_set 
+        highlight_namespace = vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
         show_file()
     end
 end
 
 -- This has to be below `show_file()`
-local function show_results()
+local function show_results_old()
     selected_file_index = 0
     local query = vim.api.nvim_buf_get_lines(0, 0, 1, false)
     local query_string = string.gsub(query[1], '%s*$', '')
@@ -259,7 +262,7 @@ local function show_results()
 --         vim.api.nvim_buf_set_lines(rbuf, 0, result_list_length, false, lines)
 --         result_count = #lines
 --         highlight_namespace = vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
---         show_file()
+         -- show_file()
     end
     show_results_dev()
 end
