@@ -1,6 +1,5 @@
 local cjson = require "cjson"
 
-local sbuf, swin
 local document_buffer, document_window 
 local highlight_namespace
 local result_count = 0 
@@ -8,10 +7,11 @@ local console_buffer, console_window, console_terminal
 local base_width = vim.api.nvim_win_get_width(0)
 local base_height = vim.api.nvim_win_get_height(0)
 local result_list_length = base_height - 5 
+result_list_length = 10
 local current_search_query = ''
 local current_result_set = {} 
-local config = {}
 
+local config = {}
 config.results_move_down = '<M-LEFT>'
 config.results_move_up = '<M-RIGHT>'
 config.edit_document = '¬'
@@ -38,6 +38,7 @@ local state = {
 -- [x] Clear search on moving back to it. 
 -- [ ] Make sure files are saved on exit (e.g. if you exit while still in the document window)
 -- [x] Deal with empty query results
+-- [ ] Make sure that if you undo after jumping to the file it doesn't blank the content
 
 ------------------------------------------------
 -- VERSION 2 Requirements 
@@ -51,12 +52,17 @@ local state = {
 ------------------------------------------------
 -- Other/Misc 
 ------------------------------------------------
+-- [ ] See if passing results as a table instead of line by line makes it faster
+-- [ ] Limit search query to the number of results that can be displayed
+-- [ ] Prevent search from going to second line
+-- [ ] Don't send a new request if nothing has changed (e.g. it's just a space or normal mode updates)
+-- [ ] Figure out how to get syntax highlighting in code fences 
 -- [x] Default to wordwrap
 -- [x] Maybe just set the window size directly
 -- [x] Add a log function
 -- [ ] Full screen toggle that also switches off wordwrap. Bascially a way to go from prose to code
 -- [ ] Hotkey to turn off wordwrap 
--- [ ] Auto-disable wordwrap in code fences/code blocks
+-- [ ] Auto-disable wordwrap in code fences/code blocks (if that's possible? with softwarp)
 -- [ ] Generate symbolic links based of patterns for posting to the site
 -- [ ] Auto-publish to twitter when you make a post 
 -- [ ] Start up debug version of the site for preview
@@ -68,12 +74,13 @@ local state = {
 -- [ ] Setup so the search results stay when moving back to search even though it clears
 -- [ ] Trigger a site build and deploy on file changes
 -- [ ] Change `dd` in the search buffer so it returns to insert mode after clearing the line
+-- [ ] Setup hotkey to jump to code blocks and auto highlight them 
+-- [ ] Setup hotkey to execute code blocks and put resutls into a results code block if one exists
 -- [ ] Make sure you can't add multiple lines in the search buffer
 -- [ ] Hotkeys to copy stuff out to pasteboards
 -- [ ] Look at `nofile` for search and resutls windows
 -- [ ] Setup so whitespace at the end of queries is removed (and doesn't send a new query)
 -- [ ] Setup filter lists for modes where things get excluded from search (e.g. streamer mode)
--- [ ] Don't send a new request if nothing has changed (e.g. it's just a space)
 -- [ ] Only turn on hot keys when you're in the app (this might already be in place)
 -- [ ] Show list of recent files (and their searches) with hotkeys to get back to
 -- [ ] Prevent closing one window without closing all
@@ -271,39 +278,29 @@ local function grimoire()
     vim.api.nvim_buf_set_keymap(document_buffer, 'i', config.jump_to_search, '<cmd>lua require"grimoire".jump_to_search()<CR>', {
         nowait = true, noremap = true, silent = true
     })
-
     vim.api.nvim_buf_set_keymap(document_buffer, 'n', config.jump_to_search, '<cmd>lua require"grimoire".jump_to_search()<CR>', {
         nowait = true, noremap = true, silent = true
     })
-
     vim.api.nvim_buf_set_keymap(sbuf, 'i', config.results_move_down, '<cmd>lua require"grimoire".select_next_index()<CR>', {
         nowait = true, noremap = true, silent = true
     })
-
     vim.api.nvim_buf_set_keymap(sbuf, 'i', config.results_move_up, '<cmd>lua require"grimoire".select_previous_index()<CR>', {
         nowait = true, noremap = true, silent = true
     })
-    
     vim.api.nvim_buf_set_keymap(sbuf, 'i', config.edit_document, '<cmd>lua require"grimoire".edit_document()<CR>', {
         nowait = true, noremap = true, silent = true
     })
-
     vim.api.nvim_buf_set_keymap(sbuf, 'n', config.results_move_down, '<cmd>lua require"grimoire".select_next_index()<CR>', {
         nowait = true, noremap = true, silent = true
     })
-
     vim.api.nvim_buf_set_keymap(sbuf, 'n', config.results_move_up, '<cmd>lua require"grimoire".select_previous_index()<CR>', {
         nowait = true, noremap = true, silent = true
     })
-
     vim.api.nvim_buf_set_keymap(sbuf, 'n', config.edit_document, '<cmd>lua require"grimoire".edit_document()<CR>', {
         nowait = true, noremap = true, silent = true
     })
-
     vim.api.nvim_command('au CursorMoved,CursorMovedI <buffer> lua require"grimoire".show_results()')
-    
     show_results()
-
 end
 
 return {
