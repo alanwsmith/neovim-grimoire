@@ -2,7 +2,6 @@ local cjson = require "cjson"
 
 local sbuf, swin
 local document_buffer, document_window 
-local selected_file_index = 0
 local highlight_namespace
 local result_count = 0 
 local console_buffer, console_window, console_terminal
@@ -26,6 +25,10 @@ config.results_move_up = '<M-RIGHT>'
 config.edit_document = '¬'
 config.jump_to_search = '¬'
 local storage_dir = "/Users/alans/grimoire/mdx_files"
+
+local state = {
+    selection_index = 0
+} 
 
 
 
@@ -173,7 +176,7 @@ end
 local function show_file()
     log("Calling: show_file()")
     if current_search_query ~= '' then 
-        current_file_name = vim.api.nvim_buf_get_lines(rbuf, selected_file_index, (selected_file_index + 1), true)
+        current_file_name = vim.api.nvim_buf_get_lines(rbuf, state.selection_index, (state.selection_index + 1), true)
         current_file_path = storage_dir..'/'..current_file_name[1]
         log("Current File Path: "..current_file_path)
         local file = io.open(current_file_path, "r")
@@ -190,20 +193,20 @@ end
 
 -- This has to be below `show_file()`
 local function select_next_index()
-    if selected_file_index < math.min((result_count - 1), (result_list_length - 1)) then
-        selected_file_index = selected_file_index + 1
+    if state.selection_index < math.min((result_count - 1), (result_list_length - 1)) then
+        state.selection_index = state.selection_index + 1
         vim.api.nvim_buf_clear_namespace(rbuf, -1, 0, -1)
-        vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
+        vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', state.selection_index, 0, -1)
         show_file()
     end
 end
 
 -- This has to be below `show_file()`
 local function select_previous_index()
-    if selected_file_index > 0 then
-        selected_file_index = selected_file_index - 1
+    if state.selection_index > 0 then
+        state.selection_index = state.selection_index - 1
         vim.api.nvim_buf_clear_namespace(rbuf, -1, 0, -1)
-        vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
+        vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', state.selection_index, 0, -1)
         show_file()
     end
 end
@@ -230,7 +233,7 @@ end
 
 local function show_results()
     log("Calling: show_results()")
-    selected_file_index = 0
+    state.selection_index = 0 
     fetch_results()
     if #current_result_set > 0 then
         local number_of_result_lines = math.min(result_list_length, #current_result_set)
@@ -241,7 +244,7 @@ local function show_results()
         end
         log("number of result lines: "..#current_result_set)
         result_count = #current_result_set 
-        highlight_namespace = vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
+        highlight_namespace = vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', state.selection_index, 0, -1)
         show_file()
     end
 end
