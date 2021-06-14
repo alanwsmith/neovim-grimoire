@@ -51,7 +51,7 @@ local state = {
 -- Other/Misc 
 ------------------------------------------------
 -- [ ] On save, run greps through the file looking for patterns and if they match fire off to external scripts
--- [ ] Setup so if there are no results it shows a window saying that in both results and the document
+-- [x] Setup so if there are no results it shows a window saying that in both results and the document
 -- [ ] See if there's a way to insert a few millisecond delay so that while you're typing it doesn't slow down opening files (may not be worth doing)
 -- [ ] Setup so `:q` closes all windows (saving the file first, or blocking if it's not ready) 
 -- [ ] Setup so `:w` saves a file 
@@ -289,8 +289,24 @@ local function show_results()
             show_file()
         end
     else
-        vim.api.nvim_buf_set_lines(rbuf, 0, result_list_length, false, {})
-        vim.api.nvim_buf_set_lines(rbuf, 0, 1, false, { "    -- Begin Your Search --"})
+        local symbol_start = {
+"  ~~ Begin Your Search ~~",    
+"",
+"        <--.",
+"   <-.   <  )  ;`a__",
+"      \\___|  )/ /--\" ~~",
+"       \\__|___)/",
+"        \\~   \\~",
+"",
+"  ~~~~~~~~~~~~~~~~~~~~~~~",  
+}
+         vim.api.nvim_buf_set_lines(rbuf, 0, 8, false, symbol_start )
+--         vim.api.nvim_buf_set_lines(rbuf, 0, result_list_length, false, {})
+--         vim.api.nvim_buf_set_lines(rbuf, 0, 1, false, { "    -- Begin Your Search --"})
+--         vim.api.nvim_buf_set_lines(rbuf, 3, 4, false, { "      <.    |)  ;`a__"})
+--         vim.api.nvim_buf_set_lines(rbuf, 4, 5, false, { "        \\___| )/ /--\""})
+--         vim.api.nvim_buf_set_lines(rbuf, 5, 6, false, { "         \\__|__)/"})
+--         vim.api.nvim_buf_set_lines(rbuf, 6, 7, false, { "          v    v"})
         show_file()
     end
 
