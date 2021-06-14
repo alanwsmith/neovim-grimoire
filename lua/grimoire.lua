@@ -49,18 +49,17 @@ local state = {
 ------------------------------------------------
 -- Other/Misc 
 ------------------------------------------------
--- [ ] Default to wordwrap
--- [ ] Set default text wrap to 64 characters
+-- [x] Default to wordwrap
+-- [x] Maybe just set the window size directly
+-- [x] Add a log function
 -- [ ] Hotkey to turn off wordwrap 
 -- [ ] Auto-disable wordwrap in code fences/code blocks
--- [x] Add a log function
--- [ ] Maybe setup a split window hotkey for a way to softwrap text 
 -- [ ] Generate symbolic links based of patterns for posting to the site
--- [ ] Trigger a site build and deploy on file changes
 -- [ ] Start up debug version of the site for preview
 -- [ ] Setup hotkey to toggle word wrap 
 -- [ ] Repopulate search with an escape (or something) when you go back to it
 -- [ ] Setup so the search results stay when moving back to search even though it clears
+-- [ ] Trigger a site build and deploy on file changes
 -- [ ] Change `dd` in the search buffer so it returns to insert mode after clearing the line
 -- [ ] Make sure you can't add multiple lines in the search buffer
 -- [ ] Look at `nofile` for search and resutls windows
@@ -137,20 +136,26 @@ end
 
 local function open_document_window()
     document_buffer = vim.api.nvim_create_buf(false, true)
-    document_window = vim.api.nvim_open_win(document_buffer, true ,
+    document_window = vim.api.nvim_open_win(document_buffer, true,
         { 
-            style="minimal", relative='editor', row=3, 
+            style="minimal", 
+            relative='editor', 
+            row=3, 
             col=math.floor(base_width / 4) + 2, 
-            width=math.floor(base_width / 4 * 3) - 3,
+            -- width=math.floor(base_width / 4 * 3) - 3,
+            width=64,
             height=base_height - 5, border='single'
         }
     )
+    vim.api.nvim_win_set_option(document_window, 'linebreak', true)
+    vim.api.nvim_win_set_option(document_window, 'wrap', true)
 end
 
 local function open_results_window()
     rbuf = vim.api.nvim_create_buf(false, true)
     rwin = vim.api.nvim_open_win(rbuf, false,
         {
+            focusable=false,
             style="minimal", relative='editor', row=3, col=0, 
             width=math.floor(base_width / 4), height=base_height - 5,
             border='single'
