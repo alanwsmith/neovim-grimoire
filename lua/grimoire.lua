@@ -87,7 +87,7 @@ local storage_dir = "/Users/alans/grimoire/mdx_files"
 local function log(message)
     local log_file = io.open("log.log", "a")
     io.output(log_file)
-    io.write(os.date("%c").."\n")
+    io.write('-- '..os.date("%c").." --\n")
     io.write(message.."\n")
     io.close(log_file)
 end
@@ -114,15 +114,11 @@ end
 
 local function jump_to_search() 
     vim.api.nvim_command('write!')
-
     local data_to_update_with = vim.api.nvim_buf_get_lines(document_buffer, 0, -1, true) 
-
     local data_as_string = ''
-
     for i = 1, #data_to_update_with do  
         data_as_string = data_as_string..data_to_update_with[i].." "
     end
-
     data_as_string = string.gsub(data_as_string, '[^a-zA-Z-]', ' ')
     log(data_as_string)
 
@@ -139,7 +135,6 @@ end
 
 local function make_new_file()
     log("Making new file")
-
 end
 
 
@@ -240,13 +235,15 @@ local function show_results_dev()
     fetch_results()
     if #current_result_set > 0 then
         local number_of_result_lines = math.min(result_list_length, #current_result_set)
+        vim.api.nvim_buf_set_lines(rbuf, 0, result_list_length, false, {})
         for i = 1, number_of_result_lines do
             log("id"..current_result_set[i]['id'])
+            vim.api.nvim_buf_set_lines(rbuf, i - 1, i, false, { current_result_set[i]['name'] })
         end
         -- vim.api.nvim_buf_set_lines(rbuf, 0, result_list_length, false, lines)
         -- result_count = #lines
         -- highlight_namespace = vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
-        -- show_file()
+        show_file()
     end
 end
 
@@ -259,10 +256,10 @@ local function show_results()
     current_search_query = query_string2 
     local lines = vim.fn.systemlist('curl -s "http://127.0.0.1:7700/indexes/grimoire/search?q='..query_string2..'&limit='..result_list_length..'" | jq -r ".hits[] | .name"')
     if #lines > 0 then
-        vim.api.nvim_buf_set_lines(rbuf, 0, result_list_length, false, lines)
-        result_count = #lines
-        highlight_namespace = vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
-        show_file()
+--         vim.api.nvim_buf_set_lines(rbuf, 0, result_list_length, false, lines)
+--         result_count = #lines
+--         highlight_namespace = vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', selected_file_index, 0, -1)
+--         show_file()
     end
     show_results_dev()
 end
