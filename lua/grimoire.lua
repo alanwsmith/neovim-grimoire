@@ -11,9 +11,6 @@ local base_height = vim.api.nvim_win_get_height(0)
 
 local result_list_length = base_height - 5 
 
-local current_file_name
-local current_file_path
-
 local current_search_query = ''
 
 local current_result_set = {} 
@@ -24,12 +21,14 @@ config.results_move_down = '<M-LEFT>'
 config.results_move_up = '<M-RIGHT>'
 config.edit_document = '¬'
 config.jump_to_search = '¬'
+config.storage_dir = "/Users/alans/grimoire/mdx_files"
+
+-- TODO: Remove this when its' in config 
 local storage_dir = "/Users/alans/grimoire/mdx_files"
 
 local state = {
     selection_index = 0
 } 
-
 
 
 ------------------------------------------------
@@ -82,6 +81,7 @@ local state = {
 -- [ ] Deal with windows that get resized
 -- [ ] Disable `:w` in the search window
 -- [ ] Remember the line number for each file for a specific amount of time
+-- [ ] Don't re-render the document windnow if the selected document hasn't changed 
 
 
 ------------------------------------------------
@@ -93,6 +93,14 @@ local function log(message)
     io.write(message.."\n")
     io.close(log_file)
 end
+
+
+local function current_file_path()
+    local file_name = current_result_set[state.selection_index + 1]['name']
+    local file_path = config.storage_dir..'/'..file_name
+    return file_path
+end
+
 
 local function close_windows()
     vim.api.nvim_win_close(rwin, true)
@@ -108,7 +116,7 @@ end
 local function edit_document() 
     vim.api.nvim_set_current_win(document_window)
     vim.api.nvim_command('set buftype=""')
-    vim.api.nvim_command('file '..current_file_path)
+    vim.api.nvim_command('file '..current_file_path())
     vim.api.nvim_command('stopinsert')
 end
 
@@ -176,10 +184,8 @@ end
 local function show_file()
     log("Calling: show_file()")
     if current_search_query ~= '' then 
-        current_file_name = vim.api.nvim_buf_get_lines(rbuf, state.selection_index, (state.selection_index + 1), true)
-        current_file_path = storage_dir..'/'..current_file_name[1]
-        log("Current File Path: "..current_file_path)
-        local file = io.open(current_file_path, "r")
+        log("Showing file: "..current_file_path())
+        local file = io.open(current_file_path(), "r")
         local lines_table = {}
         for line in file:lines() do
             table.insert(lines_table, line)
@@ -189,7 +195,6 @@ local function show_file()
         vim.api.nvim_buf_set_lines(document_buffer, 0, -1, false, lines_table)
     end
 end
-
 
 -- This has to be below `show_file()`
 local function select_next_index()
