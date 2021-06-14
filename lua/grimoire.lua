@@ -25,7 +25,7 @@ local state = {
 } 
 
 ------------------------------------------------
--- VERSION 1 Requirements 
+-- VERSION 1 Goals 
 ------------------------------------------------
 -- [x] Search and show results 
 -- [x] Provide nav to move and up and down search results 
@@ -41,33 +41,36 @@ local state = {
 -- [ ] Make sure that if you undo after jumping to the file it doesn't blank the content
 
 ------------------------------------------------
--- VERSION 2 Requirements 
+-- VERSION 2 Goals 
 ------------------------------------------------
 -- [ ] Setup config file
 -- [ ] Delete files
 -- [ ] Rename files 
--- [ ] Setup so `:q` closes all windows (saving the file first)
--- [ ] Setup so `:w` saves a file
 
 ------------------------------------------------
 -- Other/Misc 
 ------------------------------------------------
+-- [ ] Setup so if there are no results it shows a window saying that in both results and the document
+-- [ ] See if there's a way to insert a few millisecond delay so that while you're typing it doesn't slow down opening files (may not be worth doing)
+-- [ ] Setup so `:q` closes all windows (saving the file first, or blocking if it's not ready) 
+-- [ ] Setup so `:w` saves a file 
 -- [ ] See if passing results as a table instead of line by line makes it faster
--- [ ] Limit search query to the number of results that can be displayed
+-- [x] Limit search query to the number of results that can be displayed
 -- [ ] Prevent search from going to second line
 -- [ ] Don't send a new request if nothing has changed (e.g. it's just a space or normal mode updates)
 -- [ ] Figure out how to get syntax highlighting in code fences 
+-- [ ] Switch to using navit Lua http call instead of shelling out to curl 
 -- [x] Default to wordwrap
 -- [x] Maybe just set the window size directly
 -- [x] Add a log function
+-- [x] Setup debug flag for logs 
+-- [ ] Show list of recent files (and their searches) with hotkeys to get back to
 -- [ ] Full screen toggle that also switches off wordwrap. Bascially a way to go from prose to code
--- [ ] Hotkey to turn off wordwrap 
 -- [ ] Auto-disable wordwrap in code fences/code blocks (if that's possible? with softwarp)
 -- [ ] Generate symbolic links based of patterns for posting to the site
--- [ ] Auto-publish to twitter when you make a post 
 -- [ ] Start up debug version of the site for preview
--- [ ] Highlight the boreder of the window you're currently in 
--- [ ] High YAML Headers (except for title)
+-- [ ] Highlight the border of the window you're currently in 
+-- [ ] Hide YAML Headers (except for title)
 -- [ ] Setup hotkey to toggle word wrap 
 -- [ ] Setup multiple window option for horizontal and/or vertical 
 -- [ ] Repopulate search with an escape (or something) when you go back to it
@@ -80,9 +83,9 @@ local state = {
 -- [ ] Hotkeys to copy stuff out to pasteboards
 -- [ ] Look at `nofile` for search and resutls windows
 -- [ ] Setup so whitespace at the end of queries is removed (and doesn't send a new query)
+-- [ ] Auto-publish to twitter when you make a post 
 -- [ ] Setup filter lists for modes where things get excluded from search (e.g. streamer mode)
 -- [ ] Only turn on hot keys when you're in the app (this might already be in place)
--- [ ] Show list of recent files (and their searches) with hotkeys to get back to
 -- [ ] Prevent closing one window without closing all
 -- [ ] Setup so files are stored in a directory with the first word/token as the name 
 -- [ ] Multiple templates for opening files (a default should open with a hot key then another hotkey to open a template selector)
@@ -193,15 +196,29 @@ end
 local function show_file()
     -- log("Calling: show_file()")
     if current_search_query ~= '' then 
-        log("Showing file: "..current_file_path())
-        local file = io.open(current_file_path(), "r")
-        local lines_table = {}
-        for line in file:lines() do
-            table.insert(lines_table, line)
+        if #current_result_set > 0 then  
+            log("Showing file: "..current_file_path())
+            local file = io.open(current_file_path(), "r")
+            local lines_table = {}
+            for line in file:lines() do
+                table.insert(lines_table, line)
+            end
+            vim.api.nvim_win_set_cursor(document_window, {1, 0})
+            vim.api.nvim_buf_set_lines(document_buffer, 0, -1, false, {})
+            vim.api.nvim_buf_set_lines(document_buffer, 0, -1, false, lines_table)
+        else 
+            vim.api.nvim_win_set_cursor(document_window, {1, 0})
+            vim.api.nvim_buf_set_lines(document_buffer, 0, -1, false, {})
+            vim.api.nvim_buf_set_lines(document_buffer, 0, -1, false, { "---  Nothing to see here  ---"} )
         end
+    else
         vim.api.nvim_win_set_cursor(document_window, {1, 0})
         vim.api.nvim_buf_set_lines(document_buffer, 0, -1, false, {})
-        vim.api.nvim_buf_set_lines(document_buffer, 0, -1, false, lines_table)
+        vim.api.nvim_buf_set_lines(document_buffer, 0, 1, false, { "" } )
+        vim.api.nvim_buf_set_lines(document_buffer, 1, 2, false, { "" } )
+        vim.api.nvim_buf_set_lines(document_buffer, 2, 3, false, { "" } )
+        vim.api.nvim_buf_set_lines(document_buffer, 3, 4, false, { "" } )
+        vim.api.nvim_buf_set_lines(document_buffer, 4, 5, false, { "                   ---  Grimoire  ---" } )
     end
 end
 
@@ -260,7 +277,12 @@ local function show_results()
         result_count = #current_result_set 
         highlight_namespace = vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', state.selection_index, 0, -1)
         show_file()
+    else
+        vim.api.nvim_buf_set_lines(rbuf, 0, result_list_length, false, {})
+        vim.api.nvim_buf_set_lines(rbuf, 0, -1, false, { "No results"})
+        show_file()
     end
+
 end
 
 local function grimoire()
