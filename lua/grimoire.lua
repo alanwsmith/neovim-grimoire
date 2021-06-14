@@ -17,6 +17,8 @@ config.results_move_up = '<M-RIGHT>'
 config.edit_document = '¬'
 config.jump_to_search = '¬'
 config.storage_dir = "/Users/alans/grimoire/mdx_files"
+config.debug = true  
+config.log_file_path = '/Users/alans/Library/Logs/Grimoire/neovim-grimoire.log'
 
 local state = {
     selection_index = 0
@@ -87,11 +89,12 @@ local state = {
 ------------------------------------------------
 
 local function log(message)
-    local log_file = io.open("log.log", "a")
-    io.output(log_file)
-    io.write('-- '..os.date("%c").." --\n")
-    io.write(message.."\n")
-    io.close(log_file)
+    if config.debug then 
+        local log_file = io.open(config.log_file_path, "a")
+        io.output(log_file)
+        io.write('-- '..os.date("%c").."|INFO|"..message.."\n")
+        io.close(log_file)
+    end
 end
 
 local function current_file_path()
