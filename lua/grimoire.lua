@@ -331,7 +331,8 @@ local function show_results()
 "",
 "  ~~ Begin Your Search ~~",  
 }
-         vim.api.nvim_buf_set_lines(rbuf, 0, 8, false, symbol_start )
+        vim.api.nvim_buf_set_lines(rbuf, 0, -1, true, {})
+        vim.api.nvim_buf_set_lines(rbuf, 0, 8, false, symbol_start )
         show_file()
     end
 
