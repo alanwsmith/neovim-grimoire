@@ -12,6 +12,8 @@ local current_search_query = ''
 local current_result_set = {} 
 
 local config = {}
+config.keys = {}
+config.keys.create_new_file = '¡' -- Option + 1 
 config.results_move_down = '<M-LEFT>'
 config.results_move_up = '<M-RIGHT>'
 config.edit_document = '¬'
@@ -22,7 +24,8 @@ config.debug = true
 config.log_file_path = '/Users/alans/Library/Logs/Grimoire/neovim-grimoire.log'
 
 local state = {
-    selection_index = 0
+    selection_index = 0,
+
 } 
 
 ------------------------------------------------
@@ -58,6 +61,7 @@ local state = {
 -- [ ] See if there's a way to insert a few millisecond delay so that while you're typing it doesn't slow down opening files (may not be worth doing)
 -- [ ] Setup so `:q` closes all windows (saving the file first, or blocking if it's not ready) 
 -- [ ] Setup so `:w` saves a file 
+-- [ ] Periodically rebuild the search index
 -- [ ] See if passing results as a table instead of line by line makes it faster
 -- [x] Limit search query to the number of results that can be displayed
 -- [ ] Prevent search from going to second line
@@ -112,6 +116,9 @@ local function log(message)
 end
 
 local function current_file_path()
+    state.active_file_name = current_result_set[state.selection_index + 1]['name']
+    state.active_file_id = current_result_set[state.selection_index + 1]['id'] 
+    -- TODO: See if you can switch this to just use state.active_file_name
     local file_name = current_result_set[state.selection_index + 1]['name']
     local file_path = config.storage_dir..'/'..file_name
     return file_path
@@ -127,6 +134,27 @@ local function close_windows()
     vim.api.nvim_command('stopinsert')
 end
 
+
+local function create_new_file()
+    state.active_file_name = vim.api.nvim_buf_get_lines(sbuf, 0, 1, true)[1] .. ".mdx"
+    state.active_file_id = os.time() 
+    if new_file_base_name ~= '' then 
+        local new_file_path = config.storage_dir .. '/' .. state.active_file_name 
+        log("Creating file: "..new_file_path)
+        vim.api.nvim_set_current_win(document_window)
+        vim.api.nvim_command('e '.. new_file_path)
+        vim.api.nvim_buf_set_keymap(0, 'i', config.jump_to_search, '<cmd>lua require"grimoire".jump_to_search()<CR>', {
+            nowait = true, noremap = true, silent = true
+        })
+        vim.api.nvim_buf_set_keymap(0, 'n', config.jump_to_search, '<cmd>lua require"grimoire".jump_to_search()<CR>', {
+            nowait = true, noremap = true, silent = true
+        })
+    else
+        log("Won't create file with no name")
+    end
+end
+
+
 local function edit_document() 
     vim.api.nvim_set_current_win(document_window)
     vim.api.nvim_command('set buftype=""')
@@ -136,18 +164,17 @@ end
 
 local function jump_to_search() 
     vim.api.nvim_command('write!')
-    local data_to_update_with = vim.api.nvim_buf_get_lines(document_buffer, 0, -1, true) 
+    local data_to_update_with = vim.api.nvim_buf_get_lines(0, 0, -1, true) 
     local data_as_string = ''
     for i = 1, #data_to_update_with do  
         data_as_string = data_as_string..data_to_update_with[i].." "
     end
     data_as_string = string.gsub(data_as_string, '[^a-zA-Z-]', ' ')
-    -- log(data_as_string)
 
     local update_index_call = string.format(
         [[curl -X POST 'http://127.0.0.1:7700/indexes/grimoire/documents' --data '[{ "id": %d, "name": "%s", "overview": "%s" }]']], 
-        current_result_set[state.selection_index + 1]['id'],
-        current_result_set[state.selection_index + 1]['name'],
+        state.active_file_id,
+        state.active_file_name,
         data_as_string
     )
     log("Updating Search Engine With: "..update_index_call)
@@ -306,12 +333,6 @@ local function show_results()
 "  ~~ Begin Your Search ~~",  
 }
          vim.api.nvim_buf_set_lines(rbuf, 0, 8, false, symbol_start )
---         vim.api.nvim_buf_set_lines(rbuf, 0, result_list_length, false, {})
---         vim.api.nvim_buf_set_lines(rbuf, 0, 1, false, { "    -- Begin Your Search --"})
---         vim.api.nvim_buf_set_lines(rbuf, 3, 4, false, { "      <.    |)  ;`a__"})
---         vim.api.nvim_buf_set_lines(rbuf, 4, 5, false, { "        \\___| )/ /--\""})
---         vim.api.nvim_buf_set_lines(rbuf, 5, 6, false, { "         \\__|__)/"})
---         vim.api.nvim_buf_set_lines(rbuf, 6, 7, false, { "          v    v"})
         show_file()
     end
 
@@ -341,9 +362,6 @@ local function grimoire()
     vim.api.nvim_buf_set_keymap(sbuf, 'i', config.results_move_up, '<cmd>lua require"grimoire".select_previous_index()<CR>', {
         nowait = true, noremap = true, silent = true
     })
-    vim.api.nvim_buf_set_keymap(sbuf, 'i', config.edit_document, '<cmd>lua require"grimoire".edit_document()<CR>', {
-        nowait = true, noremap = true, silent = true
-    })
     vim.api.nvim_buf_set_keymap(sbuf, 'n', config.results_move_down, '<cmd>lua require"grimoire".select_next_index()<CR>', {
         nowait = true, noremap = true, silent = true
     })
@@ -353,11 +371,21 @@ local function grimoire()
     vim.api.nvim_buf_set_keymap(sbuf, 'n', config.edit_document, '<cmd>lua require"grimoire".edit_document()<CR>', {
         nowait = true, noremap = true, silent = true
     })
+    vim.api.nvim_buf_set_keymap(sbuf, 'i', config.edit_document, '<cmd>lua require"grimoire".edit_document()<CR>', {
+        nowait = true, noremap = true, silent = true
+    })
+    vim.api.nvim_buf_set_keymap(sbuf, 'i', config.keys.create_new_file, '<cmd>lua require"grimoire".create_new_file()<CR>', {
+        nowait = true, noremap = true, silent = true
+    })
+    vim.api.nvim_buf_set_keymap(sbuf, 'n', config.keys.create_new_file, '<cmd>lua require"grimoire".create_new_file()<CR>', {
+        nowait = true, noremap = true, silent = true
+    })
     vim.api.nvim_command('au CursorMoved,CursorMovedI <buffer> lua require"grimoire".show_results()')
     show_results()
 end
 
 return {
+    create_new_file = create_new_file, 
     edit_document = edit_document, 
     grimoire = grimoire,
     jump_to_search = jump_to_search, 
