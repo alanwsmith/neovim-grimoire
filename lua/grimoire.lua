@@ -15,6 +15,7 @@ local config = {}
 config.results_move_down = '<M-LEFT>'
 config.results_move_up = '<M-RIGHT>'
 config.edit_document = '¬'
+config.edit_document = '<CR>'
 config.jump_to_search = '¬'
 config.storage_dir = "/Users/alans/grimoire/mdx_files"
 config.debug = true  
@@ -50,7 +51,8 @@ local state = {
 ------------------------------------------------
 -- Other/Misc 
 ------------------------------------------------
--- [ ] Preveng going to document windows when there is not document 
+-- [ ] Have Enter/Return switch to document window when pressed in search window 
+-- [ ] Prevent going to document windows when there is not document 
 -- [ ] On save, run greps through the file looking for patterns and if they match fire off to external scripts
 -- [x] Setup so if there are no results it shows a window saying that in both results and the document
 -- [ ] See if there's a way to insert a few millisecond delay so that while you're typing it doesn't slow down opening files (may not be worth doing)
@@ -61,7 +63,7 @@ local state = {
 -- [ ] Prevent search from going to second line
 -- [ ] Don't send a new request if nothing has changed (e.g. it's just a space or normal mode updates)
 -- [ ] Figure out how to get syntax highlighting in code fences 
--- [ ] Switch to using navit Lua http call instead of shelling out to curl 
+-- [ ] Switch to using native Lua http call instead of shelling out to curl to see if it's faster
 -- [x] Default to wordwrap
 -- [x] Maybe just set the window size directly
 -- [x] Add a log function
