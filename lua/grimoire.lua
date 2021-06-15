@@ -18,7 +18,8 @@ config.results_move_down = '<M-LEFT>'
 config.results_move_up = '<M-RIGHT>'
 -- config.edit_document = '¬'
 config.edit_document = '<CR>'
-config.jump_to_search = '¬'
+-- config.jump_to_search = '¬'
+config.jump_to_search = '<F7>'
 config.storage_dir = "/Users/alans/grimoire/mdx_files"
 config.debug = true  
 config.log_file_path = '/Users/alans/Library/Logs/Grimoire/neovim-grimoire.log'
@@ -42,6 +43,8 @@ local state = {
 -- [ ] Make sure files are saved on exit (e.g. if you exit while still in the document window)
 -- [x] Deal with empty query results
 -- [ ] Make sure that if you undo after jumping to the file it doesn't blank the content
+-- [ ] Filter to remove certain results based on straing matches (streamer mode)
+--
 
 ------------------------------------------------
 -- VERSION 2 Goals 
@@ -53,8 +56,12 @@ local state = {
 ------------------------------------------------
 -- Other/Misc 
 ------------------------------------------------
--- [ ] Have Enter/Return switch to document window when pressed in search window 
--- [ ] Prevent going to document windows when there is not document 
+-- [ ] When you go back to the search window, clear it, but not the results or document. And, have a hotkey to get back to the document and maybe restore the serach.
+-- [ ] Store files in directories based off the first two words
+-- [ ] Look into debouncing keystrokes after the first key
+-- [ ] If there is nothing in the search window don't allow switcing to the document window
+-- [ ] If there are no results, don't let enter move you to the document window
+-- [x] Have Enter/Return switch to document window when pressed in search window 
 -- [ ] On save, run greps through the file looking for patterns and if they match fire off to external scripts
 -- [x] Setup so if there are no results it shows a window saying that in both results and the document
 -- [ ] See if there's a way to insert a few millisecond delay so that while you're typing it doesn't slow down opening files (may not be worth doing)
@@ -102,6 +109,7 @@ local state = {
 -- [ ] Remember the line number for each file for a specific amount of time
 -- [ ] Don't re-render the document windnow if the selected document hasn't changed 
 -- [ ] Deal with files that are deleted outside neovim
+-- [ ] Automatically update `Updated:` metadata in the header 
 
 ------------------------------------------------
 
@@ -155,7 +163,7 @@ end
 
 local function edit_document() 
     vim.api.nvim_set_current_win(document_window)
-    vim.api.nvim_command('set buftype=""')
+    vim.api.nvim_command('set buftype="markdown"')
     vim.api.nvim_command('file '..current_file_path())
     vim.api.nvim_command('stopinsert')
 end
@@ -179,7 +187,7 @@ local function jump_to_search()
     vim.fn.systemlist(update_index_call)
     -- log(update_index_call)
 
-    vim.api.nvim_buf_set_lines(sbuf, 0, -1, false, {})
+    -- vim.api.nvim_buf_set_lines(sbuf, 0, -1, false, {})
     vim.api.nvim_set_current_win(swin)
     vim.api.nvim_command('startinsert')
 end
@@ -347,8 +355,8 @@ local function grimoire()
     vim.api.nvim_buf_set_keymap(sbuf, 'n', '<F7>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
     vim.api.nvim_buf_set_keymap(rbuf, 'i', '<F7>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
     vim.api.nvim_buf_set_keymap(rbuf, 'n', '<F7>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
-    vim.api.nvim_buf_set_keymap(document_buffer, 'i', '<F7>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
-    vim.api.nvim_buf_set_keymap(document_buffer, 'n', '<F7>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
+    -- vim.api.nvim_buf_set_keymap(document_buffer, 'i', '<F7>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
+    -- vim.api.nvim_buf_set_keymap(document_buffer, 'n', '<F7>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
 
     vim.api.nvim_buf_set_keymap(document_buffer, 'i', config.jump_to_search, '<cmd>lua require"grimoire".jump_to_search()<CR>', {
         nowait = true, noremap = true, silent = true
