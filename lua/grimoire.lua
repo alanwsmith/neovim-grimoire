@@ -16,7 +16,7 @@ config.keys = {}
 config.keys.create_new_file = '¡' -- Option + 1 
 config.results_move_down = '<M-LEFT>'
 config.results_move_up = '<M-RIGHT>'
-config.edit_document = '¬'
+-- config.edit_document = '¬'
 config.edit_document = '<CR>'
 config.jump_to_search = '¬'
 config.storage_dir = "/Users/alans/grimoire/mdx_files"
@@ -25,7 +25,6 @@ config.log_file_path = '/Users/alans/Library/Logs/Grimoire/neovim-grimoire.log'
 
 local state = {
     selection_index = 0,
-
 } 
 
 ------------------------------------------------
@@ -110,7 +109,7 @@ local function log(message)
     if config.debug then 
         local log_file = io.open(config.log_file_path, "a")
         io.output(log_file)
-        io.write('-- '..os.date("%c").."|INFO|"..message.."\n")
+        io.write(os.date("%c").."|INFO|"..message.."\n")
         io.close(log_file)
     end
 end
@@ -133,7 +132,6 @@ local function close_windows()
     vim.api.nvim_buf_delete(document_buffer, { force=true })
     vim.api.nvim_command('stopinsert')
 end
-
 
 local function create_new_file()
     state.active_file_name = vim.api.nvim_buf_get_lines(sbuf, 0, 1, true)[1] .. ".mdx"
@@ -217,6 +215,7 @@ local function open_results_window()
             border='single'
         }
     )
+    vim.api.nvim_win_set_option(rwin, 'wrap', false)
 end
 
 local function open_search_window()
