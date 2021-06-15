@@ -32,7 +32,7 @@ local state = {
 -- [x] Show selected result in document window 
 -- [x] Be able to edit document in document window 
 -- [x] Save the file 
--- [ ] Update the search index on file changes
+-- [x] Update the search index on file changes
 -- [ ] Make new files (with template)
 -- [x] If no search, show nothing in document
 -- [x] Clear search on moving back to it. 
@@ -50,6 +50,7 @@ local state = {
 ------------------------------------------------
 -- Other/Misc 
 ------------------------------------------------
+-- [ ] Preveng going to document windows when there is not document 
 -- [ ] On save, run greps through the file looking for patterns and if they match fire off to external scripts
 -- [x] Setup so if there are no results it shows a window saying that in both results and the document
 -- [ ] See if there's a way to insert a few millisecond delay so that while you're typing it doesn't slow down opening files (may not be worth doing)
@@ -141,7 +142,13 @@ local function jump_to_search()
     data_as_string = string.gsub(data_as_string, '[^a-zA-Z-]', ' ')
     -- log(data_as_string)
 
-    local update_index_call = [[curl -X POST 'http://127.0.0.1:7700/indexes/grimoire/documents' --data '[{ "id": 1111111111111111112, "name": "aaaaaaaaa-test-insert.md", "overview": "hjkl uiop asdf qwer test" }]']]
+    local update_index_call = string.format(
+        [[curl -X POST 'http://127.0.0.1:7700/indexes/grimoire/documents' --data '[{ "id": %d, "name": "%s", "overview": "%s" }]']], 
+        current_result_set[state.selection_index + 1]['id'],
+        current_result_set[state.selection_index + 1]['name'],
+        data_as_string
+    )
+    log("Updating Search Engine With: "..update_index_call)
     vim.fn.systemlist(update_index_call)
     -- log(update_index_call)
 
