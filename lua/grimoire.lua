@@ -132,16 +132,20 @@ local function current_file_path()
 end
 
 local function close_windows()
-    vim.api.nvim_set_current_win(document_window)
-            -- vim.api.nvim_command('set buftype=""')
-            -- vim.api.nvim_command('file '..current_file_path())
-    vim.api.nvim_command('write!')
-    vim.api.nvim_win_close(rwin, true)
+    vim.api.nvim_command('au! CursorMoved,CursorMovedI')
+    if (preview_buffer ~= vim.api.nvim_win_get_buf(document_window)) then 
+        vim.api.nvim_set_current_win(document_window)
+        vim.api.nvim_command('write')
+        vim.api.nvim_buf_delete(vim.api.nvim_win_get_buf(document_window), {})
+        vim.api.nvim_buf_delete(preview_buffer, { force=true })
+    else 
+        -- vim.api.nvim_win_close(document_window, true)
+        vim.api.nvim_buf_delete(preview_buffer, { force=true })
+    end
+    -- vim.api.nvim_win_close(rwin, true)
     vim.api.nvim_buf_delete(rbuf, { force=true })
-    vim.api.nvim_win_close(swin, true)
+    -- vim.api.nvim_win_close(swin, true)
     vim.api.nvim_buf_delete(sbuf, { force=true })
-    vim.api.nvim_win_close(document_window, true)
-    vim.api.nvim_buf_delete(preview_buffer, { force=true })
     vim.api.nvim_command('stopinsert')
 end
 
@@ -174,6 +178,8 @@ local function edit_document()
     vim.api.nvim_buf_set_keymap(0, 'n', config.jump_to_search, '<cmd>lua require"grimoire".jump_to_search()<CR>', {
         nowait = true, noremap = true, silent = true
     })
+    vim.api.nvim_buf_set_keymap(0, 'i', 'Ω', '<cmd>lua require("grimoire").close_windows()<CR>', {})
+    vim.api.nvim_buf_set_keymap(0, 'n', 'Ω', '<cmd>lua require("grimoire").close_windows()<CR>', {})
     vim.api.nvim_command('stopinsert')
     log("----- edit_document ------")
     window_list = vim.api.nvim_list_wins()
@@ -230,6 +236,7 @@ end
 
 local function open_document_window()
     preview_buffer = vim.api.nvim_create_buf(false, true)
+    log("Preview Buffer ID: "..preview_buffer)
     document_window = vim.api.nvim_open_win(preview_buffer, true,
         { 
             style="minimal", 
@@ -266,8 +273,8 @@ local function open_search_window()
                 width=base_width - 2, height=1, border='single'
             }
         )
-    vim.api.nvim_buf_set_keymap(sbuf, 'i', '<F8>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
-    vim.api.nvim_buf_set_keymap(sbuf, 'n', '<F8>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
+    vim.api.nvim_buf_set_keymap(sbuf, 'i', 'Ω', '<cmd>lua require("grimoire").close_windows()<CR>', {})
+    vim.api.nvim_buf_set_keymap(sbuf, 'n', 'Ω', '<cmd>lua require("grimoire").close_windows()<CR>', {})
     vim.api.nvim_buf_set_keymap(sbuf, 'i', config.results_move_down, '<cmd>lua require"grimoire".select_next_index()<CR>', {
         nowait = true, noremap = true, silent = true
     })
