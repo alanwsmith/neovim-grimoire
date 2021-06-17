@@ -4,8 +4,9 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 hi def link GrimoireSelection Number  
-noremap ® :Grimoire<CR>
-inoremap ® <cmd>Grimoire<CR>
+noremap © :Grimoire<CR>
+inoremap © <cmd>Grimoire<CR>
+" Option g (grimoire)
 
 command! Grimoire lua require'grimoire'.grimoire()
 

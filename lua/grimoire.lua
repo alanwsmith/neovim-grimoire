@@ -11,17 +11,18 @@ local current_search_query = ''
 local current_result_set = {} 
 
 local config = {}
+
 config.keys = {}
-config.keys.create_new_file = '¡' -- Option + 1 
-config.results_move_down = '<M-LEFT>'
-config.results_move_up = '<M-RIGHT>'
--- config.edit_document = '¬'
+config.keys.create_new_file = '∂' -- Option + d (document creation)
+config.results_move_down = '<M-LEFT>' -- AWS: Enter + j
+config.results_move_up = '<M-RIGHT>' -- AWS: Enter + k
 config.edit_document = '<CR>'
--- config.jump_to_search = '¬'
-config.jump_to_search = '<F7>'
+config.jump_to_search = 'ƒ' -- Option + f (find)
+config.keys.save_and_quit = '∫' -- Option + b (bail)
+
 config.storage_dir = "/Users/alans/grimoire/mdx_files"
-config.debug = true  
 config.log_file_path = '/Users/alans/Library/Logs/Grimoire/neovim-grimoire.log'
+config.debug = true  
 
 local state = {
     selection_index = 0,
@@ -110,6 +111,8 @@ local state = {
 -- [ ] Deal with files that are deleted outside neovim
 -- [ ] Automatically update `Updated:` metadata in the header 
 -- [ ] Add Markdown Table Formatter type functionlity 
+-- [ ] If you're insert mode in the search bar and hit option f (i.e. `ƒ`) it throws an error 
+--
 
 ------------------------------------------------
 
@@ -178,14 +181,15 @@ local function edit_document()
     vim.api.nvim_buf_set_keymap(0, 'n', config.jump_to_search, '<cmd>lua require"grimoire".jump_to_search()<CR>', {
         nowait = true, noremap = true, silent = true
     })
-    vim.api.nvim_buf_set_keymap(0, 'i', 'Ω', '<cmd>lua require("grimoire").close_windows()<CR>', {})
-    vim.api.nvim_buf_set_keymap(0, 'n', 'Ω', '<cmd>lua require("grimoire").close_windows()<CR>', {})
+    vim.api.nvim_buf_set_keymap(0, 'i', '∫', '<cmd>lua require("grimoire").close_windows()<CR>', {})
+    vim.api.nvim_buf_set_keymap(0, 'n', '∫', '<cmd>lua require("grimoire").close_windows()<CR>', {})
     vim.api.nvim_command('stopinsert')
+    vim.api.nvim_win_set_cursor(0, {1, 0})
     log("----- edit_document ------")
-    window_list = vim.api.nvim_list_wins()
-    for i = 1, #window_list do  
-        log(window_list[i])
-    end
+    -- window_list = vim.api.nvim_list_wins()
+    -- for i = 1, #window_list do  
+        -- log(window_list[i])
+    -- end
 end
 
 local function jump_to_search() 
@@ -273,8 +277,8 @@ local function open_search_window()
                 width=base_width - 2, height=1, border='single'
             }
         )
-    vim.api.nvim_buf_set_keymap(sbuf, 'i', 'Ω', '<cmd>lua require("grimoire").close_windows()<CR>', {})
-    vim.api.nvim_buf_set_keymap(sbuf, 'n', 'Ω', '<cmd>lua require("grimoire").close_windows()<CR>', {})
+    vim.api.nvim_buf_set_keymap(sbuf, 'i', '∫', '<cmd>lua require("grimoire").close_windows()<CR>', {})
+    vim.api.nvim_buf_set_keymap(sbuf, 'n', '∫', '<cmd>lua require("grimoire").close_windows()<CR>', {})
     vim.api.nvim_buf_set_keymap(sbuf, 'i', config.results_move_down, '<cmd>lua require"grimoire".select_next_index()<CR>', {
         nowait = true, noremap = true, silent = true
     })
