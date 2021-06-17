@@ -1,6 +1,5 @@
 local cjson = require "cjson"
 
--- local document_buffer, document_window 
 local highlight_namespace
 local result_count = 0 
 local console_buffer, console_window, console_terminal
@@ -142,7 +141,7 @@ local function close_windows()
     vim.api.nvim_win_close(swin, true)
     vim.api.nvim_buf_delete(sbuf, { force=true })
     vim.api.nvim_win_close(document_window, true)
-    vim.api.nvim_buf_delete(document_buffer, { force=true })
+    vim.api.nvim_buf_delete(preview_buffer, { force=true })
     vim.api.nvim_command('stopinsert')
 end
 
@@ -168,8 +167,13 @@ end
 
 local function edit_document() 
     vim.api.nvim_set_current_win(document_window)
-    vim.api.nvim_command('file '..current_file_path())
-    vim.api.nvim_command('set buftype=""')
+    vim.api.nvim_command('edit '..current_file_path())
+    vim.api.nvim_buf_set_keymap(0, 'i', config.jump_to_search, '<cmd>lua require"grimoire".jump_to_search()<CR>', {
+        nowait = true, noremap = true, silent = true
+    })
+    vim.api.nvim_buf_set_keymap(0, 'n', config.jump_to_search, '<cmd>lua require"grimoire".jump_to_search()<CR>', {
+        nowait = true, noremap = true, silent = true
+    })
     vim.api.nvim_command('stopinsert')
     log("----- edit_document ------")
     window_list = vim.api.nvim_list_wins()
@@ -179,19 +183,39 @@ local function edit_document()
 end
 
 local function jump_to_search() 
+    -- Write the file
     vim.api.nvim_command('write!')
+
+    -- Save the buffer ID so you can close it later
+    local edit_buffer_id = vim.api.nvim_win_get_buf(document_window)
+
+    -- Get the updated data
     local data_to_update_with = vim.api.nvim_buf_get_lines(0, 0, -1, true) 
+
+    -- Push the updated data to the preview buffer 
+    vim.api.nvim_buf_set_lines(preview_buffer, 0, -1, false, data_to_update_with)
+    vim.api.nvim_win_set_buf(document_window, preview_buffer)
+    vim.api.nvim_buf_delete(edit_buffer_id, {})
+
+    -- Make a string to hold the data for the search engine update 
     local data_as_string = ''
+
+    -- Push the data onto the search string
     for i = 1, #data_to_update_with do  
         data_as_string = data_as_string..data_to_update_with[i].." "
     end
+
+    -- Remove anything that's not a s letter or dash so you can send without further encoding
     data_as_string = string.gsub(data_as_string, '[^a-zA-Z-]', ' ')
+
+    -- Setup the curl call
     local update_index_call = string.format(
         [[curl -X POST 'http://127.0.0.1:7700/indexes/grimoire/documents' --data '[{ "id": %d, "name": "%s", "overview": "%s" }]']], 
         state.active_file_id,
         state.active_file_name,
         data_as_string
     )
+
     log("Updating Search Engine With: "..update_index_call)
     vim.fn.systemlist(update_index_call)
     -- log(update_index_call)
@@ -205,8 +229,8 @@ local function make_new_file()
 end
 
 local function open_document_window()
-    document_buffer = vim.api.nvim_create_buf(false, true)
-    document_window = vim.api.nvim_open_win(document_buffer, true,
+    preview_buffer = vim.api.nvim_create_buf(false, true)
+    document_window = vim.api.nvim_open_win(preview_buffer, true,
         { 
             style="minimal", 
             relative='editor', 
@@ -287,14 +311,12 @@ local function show_file()
                  table.insert(lines_table, line)
              end
              vim.api.nvim_win_set_cursor(document_window, {1, 0})
-             vim.api.nvim_buf_set_lines(document_buffer, 0, -1, false, {})
-             vim.api.nvim_buf_set_lines(document_buffer, 0, -1, false, lines_table)
-             -- vim.api.nvim_command('set buftype=""')
-             -- vim.api.nvim_command('file '..current_file_path())
+             vim.api.nvim_buf_set_lines(preview_buffer, 0, -1, false, {})
+             vim.api.nvim_buf_set_lines(preview_buffer, 0, -1, false, lines_table)
         else 
             vim.api.nvim_win_set_cursor(document_window, {1, 0})
-            vim.api.nvim_buf_set_lines(document_buffer, 0, -1, false, {})
-            vim.api.nvim_buf_set_lines(document_buffer, 0, -1, false, { "---  Nothing to see here  ---"} )
+            vim.api.nvim_buf_set_lines(preview_buffer, 0, -1, false, {})
+            vim.api.nvim_buf_set_lines(preview_buffer, 0, -1, false, { "---  Nothing to see here  ---"} )
         end
     else
         vim.api.nvim_win_set_cursor(document_window, {1, 0})
@@ -302,19 +324,14 @@ local function show_file()
             "", "", "", "",
 "                     ---  Grimoire  ---"
         }
-        vim.api.nvim_buf_set_lines(document_buffer, 0, -1, false, {})
-        vim.api.nvim_buf_set_lines(document_buffer, 0, -1, false, header_text)
+        vim.api.nvim_buf_set_lines(preview_buffer, 0, -1, false, {})
+        vim.api.nvim_buf_set_lines(preview_buffer, 0, -1, false, header_text)
     end
 end
 
 -- This has to be below `show_file()`
 local function select_next_index()
-    log("Select next")
-    log("Selection Index: "..tostring(state.selection_index))
-    log("result_count: "..tostring(result_count))
-    log("result_list_length: "..tostring(result_list_length))
     if state.selection_index < math.min((result_count - 1), (result_list_length - 1)) then
-        log("EREHRHEHRHERHEHRHEHRE")
         state.selection_index = state.selection_index + 1
         vim.api.nvim_buf_clear_namespace(rbuf, -1, 0, -1)
         vim.api.nvim_buf_add_highlight(rbuf, -1, 'GrimoireSelection', state.selection_index, 0, -1)
@@ -405,17 +422,9 @@ local function grimoire()
     open_document_window()
     open_results_window()
     open_search_window()
-    vim.api.nvim_buf_set_keymap(rbuf, 'i', '<F8>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
-    vim.api.nvim_buf_set_keymap(rbuf, 'n', '<F8>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
-    vim.api.nvim_buf_set_keymap(document_buffer, 'i', '<F8>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
-    vim.api.nvim_buf_set_keymap(document_buffer, 'n', '<F8>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
+    vim.api.nvim_buf_set_keymap(preview_buffer, 'i', '<F8>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
+    vim.api.nvim_buf_set_keymap(preview_buffer, 'n', '<F8>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
 
-    vim.api.nvim_buf_set_keymap(document_buffer, 'i', config.jump_to_search, '<cmd>lua require"grimoire".jump_to_search()<CR>', {
-        nowait = true, noremap = true, silent = true
-    })
-    vim.api.nvim_buf_set_keymap(document_buffer, 'n', config.jump_to_search, '<cmd>lua require"grimoire".jump_to_search()<CR>', {
-        nowait = true, noremap = true, silent = true
-    })
     vim.api.nvim_command('au CursorMoved,CursorMovedI <buffer> lua require"grimoire".show_results()')
     show_results()
 end
