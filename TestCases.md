@@ -10,6 +10,3 @@ Grimoire Test Cases
     - Open grimiore with hotkey
     - Close with quit
     - Nothing should change 
-
-
-
