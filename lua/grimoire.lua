@@ -141,7 +141,7 @@ end
 
 local function close_windows()
     vim.api.nvim_command('au! WinClosed <buffer='..sbuf..'>')
-    -- vim.api.nvim_command('au! CursorMoved,CursorMovedI')
+    vim.api.nvim_command('au! CursorMoved,CursorMovedI <buffer='..sbuf..'>')
     if (preview_buffer ~= vim.api.nvim_win_get_buf(document_window)) then 
         -- vim.api.nvim_command('au! WinClosed <buffer>')
         vim.api.nvim_set_current_win(document_window)
