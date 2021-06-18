@@ -69,7 +69,7 @@ local state = {
 -- [ ] On save, run greps through the file looking for patterns and if they match fire off to external scripts
 -- [x] Setup so if there are no results it shows a window saying that in both results and the document
 -- [ ] See if there's a way to insert a few millisecond delay so that while you're typing it doesn't slow down opening files (may not be worth doing)
--- [ ] Setup so `:q` closes all windows (saving the file first, or blocking if it's not ready) 
+-- [x] Setup so `:q` closes all windows (saving the file first, or blocking if it's not ready) 
 -- [x] Setup so `:w` saves a file 
 -- [ ] Periodically rebuild the search index
 -- [ ] See if passing results as a table instead of line by line makes it faster
@@ -133,7 +133,6 @@ end
 local function current_file_path()
     state.active_file_name = current_result_set[state.selection_index + 1]['name']
     state.active_file_id = current_result_set[state.selection_index + 1]['id'] 
-    -- TODO: See if you can switch this to just use state.active_file_name
     local file_name = current_result_set[state.selection_index + 1]['name']
     local file_path = config.storage_dir..'/'..file_name
     return file_path
@@ -143,7 +142,8 @@ local function close_windows()
     vim.api.nvim_command('au! WinClosed <buffer='..sbuf..'>')
     vim.api.nvim_command('au! CursorMoved,CursorMovedI <buffer='..sbuf..'>')
     if (preview_buffer ~= vim.api.nvim_win_get_buf(document_window)) then 
-        -- vim.api.nvim_command('au! WinClosed <buffer>')
+        -- Prevent closing the window from calling close again 
+        vim.api.nvim_command('au! WinClosed <buffer='..vim.api.nvim_win_get_buf(document_window)..'>')
         vim.api.nvim_set_current_win(document_window)
         vim.api.nvim_command('write')
         vim.api.nvim_buf_delete(vim.api.nvim_win_get_buf(document_window), {})
@@ -151,6 +151,7 @@ local function close_windows()
     else 
         vim.api.nvim_buf_delete(preview_buffer, { force=true })
     end
+    log("Trying to clsose buffer: "..rbuf)
     vim.api.nvim_buf_delete(rbuf, { force=true })
     vim.api.nvim_buf_delete(sbuf, { force=true })
     vim.api.nvim_command('stopinsert')
@@ -175,12 +176,10 @@ local function create_new_file()
     end
 end
 
-
 local function edit_document() 
     vim.api.nvim_set_current_win(document_window)
     vim.api.nvim_command('edit '..current_file_path())
     vim.api.nvim_buf_set_keymap(0, 'i', config.jump_to_search, '<cmd>lua require"grimoire".jump_to_search()<CR>', {
-
         nowait = true, noremap = true, silent = true
     })
     vim.api.nvim_buf_set_keymap(0, 'n', config.jump_to_search, '<cmd>lua require"grimoire".jump_to_search()<CR>', {
@@ -191,21 +190,13 @@ local function edit_document()
     vim.api.nvim_command('stopinsert')
     vim.api.nvim_win_set_cursor(0, {1, 0})
     log("----- edit_document ------")
-    -- window_list = vim.api.nvim_list_wins()
-    -- for i = 1, #window_list do i 
-        -- log(window_list[i])
-    -- end
     edit_buffer = vim.api.nvim_win_get_buf(document_window)
     vim.api.nvim_command('au WinClosed <buffer> lua require"grimoire".close_windows()')
-    -- vim.api.nvim_command('au WinClosed <buffer> lua print("ere")')
 end
 
 local function jump_to_search() 
     -- Write the file
     vim.api.nvim_command('write!')
-
-    -- Save the buffer ID so you can close it later
-    -- local edit_buffer_id = vim.api.nvim_win_get_buf(document_window)
 
     -- Get the updated data
     local data_to_update_with = vim.api.nvim_buf_get_lines(0, 0, -1, true) 
@@ -236,14 +227,12 @@ local function jump_to_search()
 
     log("Updating Search Engine With: "..update_index_call)
     vim.fn.systemlist(update_index_call)
-    -- log(update_index_call)
-    -- vim.api.nvim_buf_set_lines(sbuf, 0, -1, false, {})
     vim.api.nvim_set_current_win(swin)
     vim.api.nvim_command('startinsert')
 end
 
 local function make_new_file()
-    log("Making new file")
+    log("TKTKTKTKT: Making new file")
 end
 
 local function open_document_window()
@@ -312,12 +301,8 @@ local function open_search_window()
         nowait = true, noremap = true, silent = true
     })
     vim.cmd('startinsert')
-    -- vim.api.nvim_command('au WinClosed <buffer> lua require"grimoire".close_windows()')
-    -- vim.api.nvim_command('au WinClosed <buffer> <cmd>lua print("HERE")')
-    local search_buffer_tmp_id = vim.api.nvim_win_get_buf(0)
-    log("Buffer ID: "..search_buffer_tmp_id)
-    vim.api.nvim_command('au WinClosed <buffer> lua require"grimoire".process_quit()')
-    vim.api.nvim_command('au! WinClosed <buffer>')
+    -- vim.api.nvim_command('au WinClosed <buffer> lua require"grimoire".process_quit()')
+    -- vim.api.nvim_command('au! WinClosed <buffer>')
     -- vim.api.nvim_command('au WinClosed <buffer> echo "asdfasdfasdf"')
 end
 
@@ -376,13 +361,10 @@ local function select_previous_index()
 end
 
 local function current_query_string()
-    -- log("Calling: current_query_string()")
     query_string = vim.api.nvim_buf_get_lines(0, 0, 1, false)[1]
     query_string = string.gsub(query_string, '%s*$', '')
     query_string = string.gsub(query_string, '%s', '%%20')
     query_string = string.gsub(query_string, '"', '')
-    -- log("New query string:" .. query_string)
-    -- TODO: make this just one thing that's global in `state`
     current_search_query = query_string
     return query_string 
 end
@@ -400,13 +382,12 @@ local function process_quit()
 end
 
 local function show_results()
-    -- log("Calling: show_results()")
     window_list = vim.api.nvim_list_wins()
-    for i = 1, #window_list do  
+    for i = 1, #window_list do
         log(window_list[i])
     end
     buffer_list = vim.api.nvim_list_bufs()
-    for i = 1, #buffer_list do  
+    for i = 1, #buffer_list do
         log(buffer_list[i])
     end
     state.selection_index = 0 
@@ -416,7 +397,6 @@ local function show_results()
             local number_of_result_lines = math.min(result_list_length, #current_result_set)
             vim.api.nvim_buf_set_lines(rbuf, 0, result_list_length, false, {})
             for i = 1, number_of_result_lines do
-                -- log("id"..current_result_set[i]['id'])
                 vim.api.nvim_buf_set_lines(rbuf, i - 1, i, false, { current_result_set[i]['name'] })
             end
             log("number of result lines: "..#current_result_set)
@@ -456,8 +436,6 @@ local function grimoire()
     vim.api.nvim_buf_set_keymap(preview_buffer, 'n', '<F8>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
     vim.api.nvim_command('au CursorMoved,CursorMovedI <buffer> lua require"grimoire".show_results()')
     vim.api.nvim_command([[au WinClosed <buffer> lua require"grimoire".close_windows()]])
-    -- vim.api.nvim_command('au WinClosed <buffer> lua print("ere")')
-    -- vim.api.nvim_command('au WinClosed lua print("ere")')
     show_results()
 end
 
