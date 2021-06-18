@@ -196,7 +196,7 @@ local function edit_document()
         -- log(window_list[i])
     -- end
     edit_buffer = vim.api.nvim_win_get_buf(document_window)
-    -- vim.api.nvim_command('au WinClosed <buffer> lua require"grimoire".close_windows()')
+    vim.api.nvim_command('au WinClosed <buffer> lua require"grimoire".close_windows()')
     -- vim.api.nvim_command('au WinClosed <buffer> lua print("ere")')
 end
 
