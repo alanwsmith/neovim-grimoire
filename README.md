@@ -6,6 +6,15 @@ WIP
 
 This document and the plugin itself are both works in progress. 
 
+NOTE: Making new files causes a bug. 
+
+NOTE: You'll have to dig into the config options at the top of the files to make changes for your system. 
+
+NOTE: This uses Meiliserach which you'll have to install and run and populate. Direcitons on that are coming later. 
+
+
+
+
 Overview
 --------
 

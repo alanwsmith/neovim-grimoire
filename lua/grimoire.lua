@@ -12,6 +12,11 @@ local current_result_set = {}
 
 local config = {}
 
+config.streamer_mode_filters = {
+    'work-',
+    'apple'
+}
+
 config.keys = {}
 config.keys.create_new_file = '∂' -- Option + d (document creation)
 config.results_move_down = '<M-LEFT>' -- AWS: Enter + j
@@ -39,11 +44,9 @@ local state = {
 -- [x] Update the search index on file changes
 -- [x] If no search, show nothing in document
 -- [x] Clear search on moving back to it. 
--- [ ] Make sure files are saved on exit (e.g. if you exit while still in the document window)
+-- [x] Make sure files are saved on exit (e.g. if you exit while still in the document window)
 -- [x] Deal with empty query results
--- [ ] Make sure that if you undo after jumping to the file it doesn't blank the content
 -- [ ] Filter to remove certain results based on straing matches (streamer mode)
---
 
 ------------------------------------------------
 -- VERSION 2 Goals 
@@ -52,6 +55,7 @@ local state = {
 -- [ ] Setup config file
 -- [ ] Delete files
 -- [ ] Rename files 
+-- [ ] Make sure that if you undo after jumping to the file it doesn't blank the content
 
 ------------------------------------------------
 -- Other/Misc 
@@ -65,8 +69,8 @@ local state = {
 -- [ ] On save, run greps through the file looking for patterns and if they match fire off to external scripts
 -- [x] Setup so if there are no results it shows a window saying that in both results and the document
 -- [ ] See if there's a way to insert a few millisecond delay so that while you're typing it doesn't slow down opening files (may not be worth doing)
--- [ ] Setup so `:q` closes all windows (saving the file first, or blocking if it's not ready) 
--- [ ] Setup so `:w` saves a file 
+-- [x] Setup so `:q` closes all windows (saving the file first, or blocking if it's not ready) 
+-- [x] Setup so `:w` saves a file 
 -- [ ] Periodically rebuild the search index
 -- [ ] See if passing results as a table instead of line by line makes it faster
 -- [x] Limit search query to the number of results that can be displayed
@@ -112,7 +116,8 @@ local state = {
 -- [ ] Automatically update `Updated:` metadata in the header 
 -- [ ] Add Markdown Table Formatter type functionlity 
 -- [ ] If you're insert mode in the search bar and hit option f (i.e. `ƒ`) it throws an error 
---
+-- [ ] Setup a hotkey to jump down to code snippets and highlight them so you can just copy
+-- [ ] Add example files 
 
 ------------------------------------------------
 
@@ -128,26 +133,26 @@ end
 local function current_file_path()
     state.active_file_name = current_result_set[state.selection_index + 1]['name']
     state.active_file_id = current_result_set[state.selection_index + 1]['id'] 
-    -- TODO: See if you can switch this to just use state.active_file_name
     local file_name = current_result_set[state.selection_index + 1]['name']
     local file_path = config.storage_dir..'/'..file_name
     return file_path
 end
 
 local function close_windows()
-    vim.api.nvim_command('au! CursorMoved,CursorMovedI')
+    vim.api.nvim_command('au! WinClosed <buffer='..sbuf..'>')
+    vim.api.nvim_command('au! CursorMoved,CursorMovedI <buffer='..sbuf..'>')
     if (preview_buffer ~= vim.api.nvim_win_get_buf(document_window)) then 
+        -- Prevent closing the window from calling close again 
+        vim.api.nvim_command('au! WinClosed <buffer='..vim.api.nvim_win_get_buf(document_window)..'>')
         vim.api.nvim_set_current_win(document_window)
         vim.api.nvim_command('write')
         vim.api.nvim_buf_delete(vim.api.nvim_win_get_buf(document_window), {})
         vim.api.nvim_buf_delete(preview_buffer, { force=true })
     else 
-        -- vim.api.nvim_win_close(document_window, true)
         vim.api.nvim_buf_delete(preview_buffer, { force=true })
     end
-    -- vim.api.nvim_win_close(rwin, true)
+    log("Trying to clsose buffer: "..rbuf)
     vim.api.nvim_buf_delete(rbuf, { force=true })
-    -- vim.api.nvim_win_close(swin, true)
     vim.api.nvim_buf_delete(sbuf, { force=true })
     vim.api.nvim_command('stopinsert')
 end
@@ -171,7 +176,6 @@ local function create_new_file()
     end
 end
 
-
 local function edit_document() 
     vim.api.nvim_set_current_win(document_window)
     vim.api.nvim_command('edit '..current_file_path())
@@ -186,18 +190,13 @@ local function edit_document()
     vim.api.nvim_command('stopinsert')
     vim.api.nvim_win_set_cursor(0, {1, 0})
     log("----- edit_document ------")
-    -- window_list = vim.api.nvim_list_wins()
-    -- for i = 1, #window_list do  
-        -- log(window_list[i])
-    -- end
+    edit_buffer = vim.api.nvim_win_get_buf(document_window)
+    vim.api.nvim_command('au WinClosed <buffer> lua require"grimoire".close_windows()')
 end
 
 local function jump_to_search() 
     -- Write the file
     vim.api.nvim_command('write!')
-
-    -- Save the buffer ID so you can close it later
-    local edit_buffer_id = vim.api.nvim_win_get_buf(document_window)
 
     -- Get the updated data
     local data_to_update_with = vim.api.nvim_buf_get_lines(0, 0, -1, true) 
@@ -205,7 +204,7 @@ local function jump_to_search()
     -- Push the updated data to the preview buffer 
     vim.api.nvim_buf_set_lines(preview_buffer, 0, -1, false, data_to_update_with)
     vim.api.nvim_win_set_buf(document_window, preview_buffer)
-    vim.api.nvim_buf_delete(edit_buffer_id, {})
+    vim.api.nvim_buf_delete(edit_buffer, {})
 
     -- Make a string to hold the data for the search engine update 
     local data_as_string = ''
@@ -228,14 +227,12 @@ local function jump_to_search()
 
     log("Updating Search Engine With: "..update_index_call)
     vim.fn.systemlist(update_index_call)
-    -- log(update_index_call)
-    -- vim.api.nvim_buf_set_lines(sbuf, 0, -1, false, {})
     vim.api.nvim_set_current_win(swin)
     vim.api.nvim_command('startinsert')
 end
 
 local function make_new_file()
-    log("Making new file")
+    log("TKTKTKTKT: Making new file")
 end
 
 local function open_document_window()
@@ -304,6 +301,9 @@ local function open_search_window()
         nowait = true, noremap = true, silent = true
     })
     vim.cmd('startinsert')
+    -- vim.api.nvim_command('au WinClosed <buffer> lua require"grimoire".process_quit()')
+    -- vim.api.nvim_command('au! WinClosed <buffer>')
+    -- vim.api.nvim_command('au WinClosed <buffer> echo "asdfasdfasdf"')
 end
 
 local function show_file()
@@ -361,13 +361,10 @@ local function select_previous_index()
 end
 
 local function current_query_string()
-    -- log("Calling: current_query_string()")
     query_string = vim.api.nvim_buf_get_lines(0, 0, 1, false)[1]
     query_string = string.gsub(query_string, '%s*$', '')
     query_string = string.gsub(query_string, '%s', '%%20')
     query_string = string.gsub(query_string, '"', '')
-    -- log("New query string:" .. query_string)
-    -- TODO: make this just one thing that's global in `state`
     current_search_query = query_string
     return query_string 
 end
@@ -377,17 +374,44 @@ local function fetch_results()
     log("Calling: "..search_query)
     local raw_json = vim.fn.systemlist(search_query)
     local json_data = cjson.decode(raw_json[1])
-    current_result_set = json_data['hits']
+
+    local block_patterns = config.streamer_mode_filters
+    -- block_patterns = { 'work-' } 
+    
+    current_result_set = {} 
+    for i=1, #json_data['hits'] do
+        local document_is_safe = true 
+        for block_id = 1, #block_patterns do 
+            local item_name = string.lower(json_data['hits'][i]['name'])
+            local item_overview = string.lower(json_data['hits'][i]['overview'])
+            local block_item = string.lower(block_patterns[block_id])
+            log("Block item: " .. block_item)
+            if string.find(item_name, block_item) then 
+                document_is_safe = false
+            end 
+            if string.find(item_overview, block_item) then 
+                document_is_safe = false
+            end 
+        end
+        if document_is_safe == true then 
+            current_result_set[#current_result_set+1] = json_data['hits'][i]
+        end
+    end 
+
+    -- current_result_set = json_data['hits']
+end
+
+local function process_quit() 
+    log("Processing quit")
 end
 
 local function show_results()
-    -- log("Calling: show_results()")
     window_list = vim.api.nvim_list_wins()
-    for i = 1, #window_list do  
+    for i = 1, #window_list do
         log(window_list[i])
     end
     buffer_list = vim.api.nvim_list_bufs()
-    for i = 1, #buffer_list do  
+    for i = 1, #buffer_list do
         log(buffer_list[i])
     end
     state.selection_index = 0 
@@ -397,7 +421,6 @@ local function show_results()
             local number_of_result_lines = math.min(result_list_length, #current_result_set)
             vim.api.nvim_buf_set_lines(rbuf, 0, result_list_length, false, {})
             for i = 1, number_of_result_lines do
-                -- log("id"..current_result_set[i]['id'])
                 vim.api.nvim_buf_set_lines(rbuf, i - 1, i, false, { current_result_set[i]['name'] })
             end
             log("number of result lines: "..#current_result_set)
@@ -411,7 +434,7 @@ local function show_results()
         end
     else
         local symbol_start = {
-"  ~~~~~~~~~~~~~~~~~~~~~~~",    
+"",
 "",
 "        <--.",
 "   <-.   <  )  ;`a__",
@@ -435,19 +458,21 @@ local function grimoire()
     open_search_window()
     vim.api.nvim_buf_set_keymap(preview_buffer, 'i', '<F8>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
     vim.api.nvim_buf_set_keymap(preview_buffer, 'n', '<F8>', '<cmd>lua require("grimoire").close_windows()<CR>', {})
-
     vim.api.nvim_command('au CursorMoved,CursorMovedI <buffer> lua require"grimoire".show_results()')
+    vim.api.nvim_command([[au WinClosed <buffer> lua require"grimoire".close_windows()]])
     show_results()
 end
 
 return {
+    close_windows = close_windows,
     create_new_file = create_new_file, 
     edit_document = edit_document, 
     grimoire = grimoire,
     jump_to_search = jump_to_search, 
-    close_windows = close_windows,
-    show_results = show_results,
+    log = log, 
+    process_quit = process_quit,
     select_next_index = select_next_index,
     select_previous_index = select_previous_index, 
+    show_results = show_results,
 }
 
