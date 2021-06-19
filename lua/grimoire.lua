@@ -12,6 +12,11 @@ local current_result_set = {}
 
 local config = {}
 
+config.streamer_mode_filters = {
+    'work-',
+    'apple'
+}
+
 config.keys = {}
 config.keys.create_new_file = '∂' -- Option + d (document creation)
 config.results_move_down = '<M-LEFT>' -- AWS: Enter + j
@@ -23,11 +28,6 @@ config.keys.save_and_quit = '∫' -- Option + b (bail)
 config.storage_dir = "/Users/alans/grimoire/mdx_files"
 config.log_file_path = '/Users/alans/Library/Logs/Grimoire/neovim-grimoire.log'
 config.debug = true  
-
-config.streamer_mode_filters = {
-    'work-',
-    'straberry'
-}
 
 local state = {
     selection_index = 0,
@@ -374,7 +374,31 @@ local function fetch_results()
     log("Calling: "..search_query)
     local raw_json = vim.fn.systemlist(search_query)
     local json_data = cjson.decode(raw_json[1])
-    current_result_set = json_data['hits']
+
+    local block_patterns = config.streamer_mode_filters
+    -- block_patterns = { 'work-' } 
+    
+    current_result_set = {} 
+    for i=1, #json_data['hits'] do
+        local document_is_safe = true 
+        for block_id = 1, #block_patterns do 
+            local item_name = string.lower(json_data['hits'][i]['name'])
+            local item_overview = string.lower(json_data['hits'][i]['overview'])
+            local block_item = string.lower(block_patterns[block_id])
+            log("Block item: " .. block_item)
+            if string.find(item_name, block_item) then 
+                document_is_safe = false
+            end 
+            if string.find(item_overview, block_item) then 
+                document_is_safe = false
+            end 
+        end
+        if document_is_safe == true then 
+            current_result_set[#current_result_set+1] = json_data['hits'][i]
+        end
+    end 
+
+    -- current_result_set = json_data['hits']
 end
 
 local function process_quit() 
