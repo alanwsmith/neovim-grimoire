@@ -58,6 +58,7 @@ I got a huge amount of help from chat including:
 - [cryogi](https://twitch.tv/cryogi)
 - [GeekyGirlSarah](https://twitch.tv/GeekyGirlSarah)
 - [i7](https://github.com/YannickFricke)
+- [SheWhoExists](https://https://twitch.tv/SheWhoExists)
 
 
 Other things I use
